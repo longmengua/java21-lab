@@ -1,1 +1,19 @@
 # java17-demo-app
+
+## Summary
+
+- It has been some time since I last used Java, and this is my first time trying out Java 17.
+
+## Gradle commands
+
+- List up Tasks of gradle
+    - ./gradlew tasks
+
+## Goals
+
+- phase 1
+    - try spring webFlux
+
+- phase 2
+    - try 
+
