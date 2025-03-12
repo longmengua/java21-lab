@@ -2,62 +2,111 @@ package com.example.demo.util;
 
 import org.junit.jupiter.api.Test;
 
-import java.util.concurrent.CompletableFuture;
-import java.util.concurrent.ExecutionException;
+import java.util.concurrent.*;
 
-import static org.junit.jupiter.api.Assertions.assertDoesNotThrow;
-import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.*;
 
-public class ThreadUtilTest {
+class ThreadUtilTest {
 
+    // Test for runBasicThread method
     @Test
-    public void testRunBasicThread() {
-        assertDoesNotThrow(() -> ThreadUtil.runBasicThread(() -> System.out.println("Basic Thread Running")));
+    void testRunBasicThread() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        // Task that modifies the array when executed
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run the basic thread
+        ThreadUtil.runBasicThread(task);
+
+        // Wait for a moment to ensure thread has finished
+        Thread.sleep(100);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed.");
     }
 
+    // Test for runConcurrentTasks method
     @Test
-    public void testRunConcurrentTasks() {
-        Runnable task1 = () -> System.out.println("Concurrent Task 1 Running");
-        Runnable task2 = () -> System.out.println("Concurrent Task 2 Running");
-        assertDoesNotThrow(() -> ThreadUtil.runConcurrentTasks(task1, task2));
+    void testRunConcurrentTasks() throws InterruptedException {
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
+
+        // Two simple tasks
+        Runnable task1 = () -> task1Executed[0] = true;
+        Runnable task2 = () -> task2Executed[0] = true;
+
+        // Run concurrent tasks
+        ThreadUtil.runConcurrentTasks(task1, task2);
+
+        // Wait for tasks to complete
+        Thread.sleep(100);
+
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed.");
     }
 
+    // Test for runWithThreadPool method
     @Test
-    public void testRunParallelTasks() {
-        Runnable task1 = () -> System.out.println("Parallel Task 1 Running");
-        Runnable task2 = () -> System.out.println("Parallel Task 2 Running");
-        assertDoesNotThrow(() -> ThreadUtil.runParallelTasks(task1, task2));
+    void testRunWithThreadPool() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        // Task that modifies the array when executed
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run with a thread pool of size 1
+        ThreadUtil.runWithThreadPool(task, 1);
+
+        // Wait for the task to complete
+        Thread.sleep(100);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed with thread pool.");
     }
 
+    // Test for synchronizedMethod (should lock the method and execute the task)
     @Test
-    public void testRunWithThreadPool() {
-        Runnable task = () -> System.out.println("Thread Pool Task Running");
-        assertDoesNotThrow(() -> ThreadUtil.runWithThreadPool(task, 2));
+    void testSynchronizedMethod() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run the synchronized method
+        ThreadUtil.synchronizedMethod(task);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed under synchronization.");
     }
 
+    // Test for runWithReentrantLock method
     @Test
-    public void testRunWithVirtualThread() {
-        Runnable task = () -> System.out.println("Virtual Thread Task Running");
-        assertDoesNotThrow(() -> ThreadUtil.runWithVirtualThread(task));
+    void testRunWithReentrantLock() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run with ReentrantLock
+        ThreadUtil.runWithReentrantLock(task);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed with ReentrantLock.");
     }
 
+    // Test for runWithCompletableFuture method
     @Test
-    public void testSynchronizedMethod() {
-        Runnable task = () -> System.out.println("Synchronized Task Running");
-        assertDoesNotThrow(() -> ThreadUtil.synchronizedMethod(task));
-    }
+    void testRunWithCompletableFuture() throws ExecutionException, InterruptedException {
+        final boolean[] taskExecuted = { false };
 
-    @Test
-    public void testRunWithReentrantLock() {
-        Runnable task = () -> System.out.println("ReentrantLock Task Running");
-        assertDoesNotThrow(() -> ThreadUtil.runWithReentrantLock(task));
-    }
+        Runnable task = () -> taskExecuted[0] = true;
 
-    @Test
-    public void testRunWithCompletableFuture() throws ExecutionException, InterruptedException {
-        Runnable task = () -> System.out.println("CompletableFuture Task Running");
+        // Run the task asynchronously using CompletableFuture
         CompletableFuture<Void> future = ThreadUtil.runWithCompletableFuture(task);
-        future.get(); // Wait for the task to complete
-        assertTrue(future.isDone());
+
+        // Wait for the task to complete
+        future.get(); // This will block until the task completes
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed with CompletableFuture.");
     }
 }
