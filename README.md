@@ -8,6 +8,7 @@
 
 - List up Tasks of gradle
     - ./gradlew tasks
+    - ./gradlew bootRun
 
 ## Goals
 
@@ -15,5 +16,5 @@
     - try spring webFlux
 
 - phase 2
-    - try 
+    - Try multithreading and relevant cases.
 
