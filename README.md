@@ -9,6 +9,7 @@
 - List up Tasks of gradle
     - ./gradlew tasks
     - ./gradlew bootRun
+    - ./gradlew clean test --stacktrace
 
 ## Goals
 

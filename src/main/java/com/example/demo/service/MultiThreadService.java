@@ -1,17 +1,12 @@
 package com.example.demo.service;
 
 import org.springframework.stereotype.Service;
-import reactor.core.publisher.Mono;
-
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
 @Service
 public class MultiThreadService {
-    public Mono<String> getMessage() {
-        return Mono.just("Hello from Service Layer!");
-    }
 
     private final ExecutorService executorService = Executors.newFixedThreadPool(10);
 

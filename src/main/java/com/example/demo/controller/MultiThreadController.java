@@ -5,7 +5,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
-import reactor.core.publisher.Mono;
 
 import java.util.concurrent.CompletableFuture;
 
@@ -15,11 +14,6 @@ public class MultiThreadController {
 
     @Autowired
     private MultiThreadService multiThreadService;
-
-    @GetMapping("/message")
-    public Mono<String> getMessage() {
-        return multiThreadService.getMessage();
-    }
 
     @GetMapping("/async-method")
     public CompletableFuture<String> asyncMethod() {
