@@ -30,18 +30,19 @@ public class ThreadUtil {
 
     // Parallelism example
     public static void runParallelTasks(Runnable... tasks) {
-        ForkJoinPool forkJoinPool = new ForkJoinPool();
-        for (Runnable task : tasks) {
-            forkJoinPool.submit(task);
-        }
-        forkJoinPool.shutdown();
-        try {
-            if (!forkJoinPool.awaitTermination(60, TimeUnit.SECONDS)) {
-                forkJoinPool.shutdownNow();
+        try (ForkJoinPool forkJoinPool = new ForkJoinPool()) {
+            for (Runnable task : tasks) {
+                forkJoinPool.submit(task);
             }
-        } catch (InterruptedException e) {
-            forkJoinPool.shutdownNow();
-            Thread.currentThread().interrupt();
+            forkJoinPool.shutdown();
+            try {
+                if (!forkJoinPool.awaitTermination(60, TimeUnit.SECONDS)) {
+                    forkJoinPool.shutdownNow();
+                }
+            } catch (InterruptedException e) {
+                forkJoinPool.shutdownNow();
+                Thread.currentThread().interrupt();
+            }
         }
     }
 
