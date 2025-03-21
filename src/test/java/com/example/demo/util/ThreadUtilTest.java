@@ -109,4 +109,37 @@ class ThreadUtilTest {
         // Assert that the task was executed
         assertTrue(taskExecuted[0], "Task should have been executed with CompletableFuture.");
     }
+
+    // Test for runWithVirtualThread method
+    @Test
+    void testRunWithVirtualThread() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        // Task that modifies the array when executed
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run the task using a virtual thread
+        ThreadUtil.runWithVirtualThread(task);
+
+        // Wait for the task to complete
+        Thread.sleep(100);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed with virtual thread.");
+    }
+
+    // Test for runWithVirtualThreadV2 method
+    @Test
+    void testRunWithVirtualThreadV2() throws InterruptedException {
+        final boolean[] taskExecuted = { false };
+
+        // Task that modifies the array when executed
+        Runnable task = () -> taskExecuted[0] = true;
+
+        // Run the task using virtual thread (v2)
+        ThreadUtil.runWithVirtualThreadV2(task);
+
+        // Assert that the task was executed
+        assertTrue(taskExecuted[0], "Task should have been executed with virtual thread V2.");
+    }
 }

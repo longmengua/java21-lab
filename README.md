@@ -1,4 +1,4 @@
-# java17-demo-app
+# java21-demo-app
 
 ## Summary
 

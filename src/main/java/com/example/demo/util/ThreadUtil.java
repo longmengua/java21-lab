@@ -60,26 +60,14 @@ public class ThreadUtil {
         }
     }
 
-    // Virtual Threads example (Java 19)
-    // public static void runWithVirtualThread(Runnable task) {
-    // Thread.ofVirtual().start(task);
-    // }
-
     /**
-     * Executes a given task using a cached thread pool, simulating a virtual thread
-     * in Java 17.
-     * 
-     * <p>
-     * Note: Java 17 does not support true virtual threads natively.
-     * This implementation uses a cached thread pool to simulate the behavior.
-     * </p>
-     *
-     * @param task The runnable task to be executed.
+     * 1. CPU-intensive tasks (e.g., computation, compression, image processing)
+     * 2. Low concurrency but requires fast response
+     * 3. Needs to support legacy systems (using ThreadLocal)
      */
-    public static void runWithVirtualThread(Runnable task) {
+    public static void runWithCachedThread(Runnable task) {
         ExecutorService executor = Executors.newCachedThreadPool();
         executor.submit(() -> {
-            System.out.println("Simulating Virtual Thread in Java 17");
             task.run();
         });
         executor.shutdown();
@@ -114,5 +102,35 @@ public class ThreadUtil {
     // CompletableFuture example
     public static CompletableFuture<Void> runWithCompletableFuture(Runnable task) {
         return CompletableFuture.runAsync(task);
+    }
+
+    /**
+     * 1. High-concurrency I/O tasks (e.g., HTTP API, DB, MQ)
+     * 2. No need for ThreadLocal and requires massive concurrency
+     */
+    public static void runWithVirtualThread(Runnable task) {
+        // Executor service that manages virtual threads
+        ExecutorService executorService = Executors.newVirtualThreadPerTaskExecutor();
+
+        // Submit the task to the executor which will run the task on a virtual thread
+        executorService.submit(task);
+
+        // Optional: Shut down the executor service after task completion
+        executorService.shutdown();
+    }
+
+    /**
+     * 1. High-concurrency I/O tasks (e.g., HTTP API, DB, MQ)
+     * 2. No need for ThreadLocal and requires massive concurrency
+     */
+    public static void runWithVirtualThreadV2(Runnable task) {
+        // Create and start a virtual thread using Thread.ofVirtual()
+        Thread virtualThread = Thread.ofVirtual().start(task);
+
+        try {
+            virtualThread.join(); // This blocks the main thread until the virtual thread finishes its execution.
+        } catch (InterruptedException e) {
+            Thread.currentThread().interrupt();
+        }
     }
 }
