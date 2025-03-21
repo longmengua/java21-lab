@@ -92,7 +92,7 @@ public class ThreadUtil {
      * 1. High-concurrency I/O tasks (e.g., HTTP API, DB, MQ)
      * 2. No need for ThreadLocal and requires massive concurrency
      */
-    public static void runWithVirtualThreadV2(Runnable... tasks) {
+    public static void runWithThreadOfVirtual(Runnable... tasks) {
         for (Runnable task : tasks) {
             // Create and start a virtual thread using Thread.ofVirtual()
             Thread virtualThread = Thread.ofVirtual().start(task);

@@ -172,7 +172,7 @@ class ThreadUtilTest {
         Runnable task2 = () -> task2Executed[0] = true;
 
         // Run the tasks using virtual thread (v2)
-        ThreadUtil.runWithVirtualThreadV2(task1, task2);
+        ThreadUtil.runWithThreadOfVirtual(task1, task2);
 
         // Assert that both tasks were executed
         assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread V2.");
