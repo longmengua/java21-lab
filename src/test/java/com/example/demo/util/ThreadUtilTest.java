@@ -1,34 +1,37 @@
 package com.example.demo.util;
 
 import org.junit.jupiter.api.Test;
-
 import java.util.concurrent.*;
-
 import static org.junit.jupiter.api.Assertions.*;
 
 class ThreadUtilTest {
 
-    // Test for runBasicThread method
+    // Test for testRunBasicThread method
     @Test
     void testRunBasicThread() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        // Task that modifies the array when executed
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1 that modifies the array when executed
+        Runnable task1 = () -> task1Executed[0] = true;
 
-        // Run the basic thread
-        ThreadUtil.runBasicThread(task);
+        // Task 2 that modifies the array when executed
+        Runnable task2 = () -> task2Executed[0] = true;
 
-        // Wait for a moment to ensure thread has finished
+        // Run the basic thread with both tasks
+        ThreadUtil.runWithBasicThreads(task1, task2);
+
+        // Wait for a moment to ensure threads have finished
         Thread.sleep(100);
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed.");
     }
 
-    // Test for runConcurrentTasks method
+    // Test for testRunWithForkJoinPool method
     @Test
-    void testRunConcurrentTasks() throws InterruptedException {
+    void testRunWithForkJoinPool() throws InterruptedException {
         final boolean[] task1Executed = { false };
         final boolean[] task2Executed = { false };
 
@@ -37,7 +40,7 @@ class ThreadUtilTest {
         Runnable task2 = () -> task2Executed[0] = true;
 
         // Run concurrent tasks
-        ThreadUtil.runConcurrentTasks(task1, task2);
+        ThreadUtil.runWithForkJoinPool(task1, task2);
 
         // Wait for tasks to complete
         Thread.sleep(100);
@@ -47,99 +50,132 @@ class ThreadUtilTest {
         assertTrue(task2Executed[0], "Task 2 should have been executed.");
     }
 
-    // Test for runWithThreadPool method
+    // Test for runWithFixedThreadPool method
     @Test
-    void testRunWithThreadPool() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+    void testRunWithFixedThreadPool() throws InterruptedException {
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        // Task that modifies the array when executed
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1 that modifies the array when executed
+        Runnable task1 = () -> task1Executed[0] = true;
 
-        // Run with a thread pool of size 1
-        ThreadUtil.runWithThreadPool(task, 1);
+        // Task 2 that modifies the array when executed
+        Runnable task2 = () -> task2Executed[0] = true;
+
+        // Run with a thread pool of size 2
+        ThreadUtil.runWithFixedThreadPool(task1, task2);
 
         // Wait for the task to complete
         Thread.sleep(100);
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed with thread pool.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with thread pool.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with thread pool.");
     }
 
     // Test for synchronizedMethod (should lock the method and execute the task)
     @Test
-    void testSynchronizedMethod() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+    void testRunWithSynchronized() throws InterruptedException {
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
+
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
 
         // Run the synchronized method
-        ThreadUtil.synchronizedMethod(task);
+        ThreadUtil.runWithSynchronized(task1, task2);
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed under synchronization.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed under synchronization.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed under synchronization.");
     }
 
     // Test for runWithReentrantLock method
     @Test
     void testRunWithReentrantLock() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
+
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
 
         // Run with ReentrantLock
-        ThreadUtil.runWithReentrantLock(task);
+        ThreadUtil.runWithReentrantLock(task1, task2);
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed with ReentrantLock.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with ReentrantLock.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with ReentrantLock.");
     }
 
     // Test for runWithCompletableFuture method
     @Test
     void testRunWithCompletableFuture() throws ExecutionException, InterruptedException {
-        final boolean[] taskExecuted = { false };
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
 
-        // Run the task asynchronously using CompletableFuture
-        CompletableFuture<Void> future = ThreadUtil.runWithCompletableFuture(task);
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
+
+        // Run the tasks asynchronously using CompletableFuture
+        CompletableFuture<Void> future = ThreadUtil.runWithCompletableFuture(task1, task2);
 
         // Wait for the task to complete
-        future.get(); // This will block until the task completes
+        future.get(); // This will block until the tasks complete
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed with CompletableFuture.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with CompletableFuture.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with CompletableFuture.");
     }
 
     // Test for runWithVirtualThread method
     @Test
     void testRunWithVirtualThread() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        // Task that modifies the array when executed
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
 
-        // Run the task using a virtual thread
-        ThreadUtil.runWithVirtualThread(task);
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
 
-        // Wait for the task to complete
+        // Run the tasks using virtual threads
+        ThreadUtil.runWithVirtualThread(task1, task2);
+
+        // Wait for the tasks to complete
         Thread.sleep(100);
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed with virtual thread.");
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread.");
     }
 
     // Test for runWithVirtualThreadV2 method
     @Test
     void testRunWithVirtualThreadV2() throws InterruptedException {
-        final boolean[] taskExecuted = { false };
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
 
-        // Task that modifies the array when executed
-        Runnable task = () -> taskExecuted[0] = true;
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
 
-        // Run the task using virtual thread (v2)
-        ThreadUtil.runWithVirtualThreadV2(task);
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
 
-        // Assert that the task was executed
-        assertTrue(taskExecuted[0], "Task should have been executed with virtual thread V2.");
+        // Run the tasks using virtual thread (v2)
+        ThreadUtil.runWithVirtualThreadV2(task1, task2);
+
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread V2.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread V2.");
     }
 }
