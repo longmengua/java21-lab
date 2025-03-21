@@ -73,6 +73,49 @@ class ThreadUtilTest {
         assertTrue(task2Executed[0], "Task 2 should have been executed with thread pool.");
     }
 
+    // Test for runWithVirtualThread method
+    @Test
+    void testRunWithVirtualThread() throws InterruptedException {
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
+
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
+
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
+
+        // Run the tasks using virtual threads
+        ThreadUtil.runWithVirtualThread(task1, task2);
+
+        // Wait for the tasks to complete
+        Thread.sleep(100);
+
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread.");
+    }
+
+    // Test for runWithThreadOfVirtual method
+    @Test
+    void testRunWithThreadOfVirtual() throws InterruptedException {
+        final boolean[] task1Executed = { false };
+        final boolean[] task2Executed = { false };
+
+        // Task 1
+        Runnable task1 = () -> task1Executed[0] = true;
+
+        // Task 2
+        Runnable task2 = () -> task2Executed[0] = true;
+
+        // Run the tasks using virtual thread (v2)
+        ThreadUtil.runWithThreadOfVirtual(task1, task2);
+
+        // Assert that both tasks were executed
+        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread V2.");
+        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread V2.");
+    }
+
     // Test for synchronizedMethod (should lock the method and execute the task)
     @Test
     void testRunWithSynchronized() throws InterruptedException {
@@ -134,48 +177,5 @@ class ThreadUtilTest {
         // Assert that both tasks were executed
         assertTrue(task1Executed[0], "Task 1 should have been executed with CompletableFuture.");
         assertTrue(task2Executed[0], "Task 2 should have been executed with CompletableFuture.");
-    }
-
-    // Test for runWithVirtualThread method
-    @Test
-    void testRunWithVirtualThread() throws InterruptedException {
-        final boolean[] task1Executed = { false };
-        final boolean[] task2Executed = { false };
-
-        // Task 1
-        Runnable task1 = () -> task1Executed[0] = true;
-
-        // Task 2
-        Runnable task2 = () -> task2Executed[0] = true;
-
-        // Run the tasks using virtual threads
-        ThreadUtil.runWithVirtualThread(task1, task2);
-
-        // Wait for the tasks to complete
-        Thread.sleep(100);
-
-        // Assert that both tasks were executed
-        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread.");
-        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread.");
-    }
-
-    // Test for runWithVirtualThreadV2 method
-    @Test
-    void testRunWithVirtualThreadV2() throws InterruptedException {
-        final boolean[] task1Executed = { false };
-        final boolean[] task2Executed = { false };
-
-        // Task 1
-        Runnable task1 = () -> task1Executed[0] = true;
-
-        // Task 2
-        Runnable task2 = () -> task2Executed[0] = true;
-
-        // Run the tasks using virtual thread (v2)
-        ThreadUtil.runWithThreadOfVirtual(task1, task2);
-
-        // Assert that both tasks were executed
-        assertTrue(task1Executed[0], "Task 1 should have been executed with virtual thread V2.");
-        assertTrue(task2Executed[0], "Task 2 should have been executed with virtual thread V2.");
     }
 }
