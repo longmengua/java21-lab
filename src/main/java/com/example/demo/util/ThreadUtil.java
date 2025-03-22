@@ -1,5 +1,7 @@
 package com.example.demo.util;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.concurrent.*;
 import java.util.concurrent.locks.ReentrantLock;
 
@@ -106,24 +108,47 @@ public class ThreadUtil {
     }
 
     // Synchronization example for multiple tasks
-    public static void runWithSynchronized(Runnable... tasks) {
-        synchronized (ThreadUtil.class) {
-            for (Runnable task : tasks) {
-                task.run();
+    public static void runWithSynchronized(List<String> lockAttemptLogs, Runnable... tasks) {
+        boolean[] skippedTasks = new boolean[tasks.length];
+        Arrays.fill(skippedTasks, false);
+
+        for (int i = 0; i < tasks.length; i++) {
+            Runnable task = tasks[i];
+            String threadName = Thread.currentThread().getName();
+
+            // First, check if the task was already skipped by another thread
+            if (skippedTasks[i]) {
+                lockAttemptLogs.add("Task " + (i + 1) + " is blocked, " + threadName);
+                continue; // Skip the task if it was already executed or blocked
+            }
+
+            // Log execution of the task
+            synchronized (task) {
+                if (!skippedTasks[i]) {
+                    lockAttemptLogs.add("Task " + (i + 1) + " executed, " + threadName);
+                    task.run(); // Execute the task inside the synchronized block
+                    skippedTasks[i] = true; // Mark the task as executed
+                }
             }
         }
     }
 
     // ReentrantLock example for multiple tasks
-    public static void runWithReentrantLock(Runnable... tasks) {
-        ReentrantLock lock = new ReentrantLock();
-        lock.lock();
+    public static void runWithReentrantLock(ReentrantLock lock, Runnable... tasks) {
         try {
-            for (Runnable task : tasks) {
-                task.run();
+            if (lock.tryLock(1, TimeUnit.SECONDS)) { // 嘗試獲取鎖
+                try {
+                    for (Runnable task : tasks) {
+                        task.run();
+                    }
+                } finally {
+                    lock.unlock();
+                }
+            } else {
+                System.out.println(Thread.currentThread().getName() + " 獲取鎖失敗，無法執行任務");
             }
-        } finally {
-            lock.unlock();
+        } catch (Exception e) {
+
         }
     }
 

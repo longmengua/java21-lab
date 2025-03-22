@@ -1,6 +1,6 @@
 plugins {
     java
-    id("org.springframework.boot") version "3.1.0"  // Use a stable version of Spring Boot
+    id("org.springframework.boot") version "3.1.0" 
     id("io.spring.dependency-management") version "1.1.7"
 }
 
@@ -21,10 +21,15 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
-    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3") // Correct version for JUnit
+    testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")
     testRuntimeOnly("org.junit.jupiter:junit-jupiter-engine:5.9.3")
 }
 
 tasks.withType<Test> {
     useJUnitPlatform()
+
+    // 設置測試輸出顯示
+    testLogging {
+        showStandardStreams = true  // 顯示標準輸出
+    }
 }

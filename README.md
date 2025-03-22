@@ -11,6 +11,7 @@
     - ./gradlew bootRun
     - ./gradlew clean build --refresh-dependencies
     - ./gradlew clean test --stacktrace
+    - ./gradlew test --info
 
 ## Goals
 
