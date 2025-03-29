@@ -2,7 +2,7 @@
 
 ## Summary
 
-- It has been some time since I last used Java, and this is my first time trying out Java 17.
+- new futures test and demo project
 
 ## Goals
 
