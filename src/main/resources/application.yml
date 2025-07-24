@@ -1,0 +1,13 @@
+spring:
+  application:
+    name: demo
+
+redis:
+  cluster:
+    nodes:
+      - redis-1.redis.orb.local:6379
+      - redis-2.redis.orb.local:6379
+      - redis-3.redis.orb.local:6379
+    timeout: 2000
+    max-attempts: 3
+    password:
