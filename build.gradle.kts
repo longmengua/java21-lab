@@ -18,9 +18,17 @@ repositories {
 }
 
 dependencies {
+    implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3")
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("redis.clients:jedis:4.4.3")
 
+    // Lombok
+    compileOnly("org.projectlombok:lombok:1.18.30")
+    annotationProcessor("org.projectlombok:lombok:1.18.30")
+    testCompileOnly("org.projectlombok:lombok:1.18.30")
+    testAnnotationProcessor("org.projectlombok:lombok:1.18.30")
+
+    // 測試相關
     testImplementation("org.springframework.boot:spring-boot-starter-test")
     testImplementation("io.projectreactor:reactor-test")
     testImplementation("org.junit.jupiter:junit-jupiter-api:5.9.3")

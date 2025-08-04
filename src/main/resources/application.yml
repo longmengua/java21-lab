@@ -1,6 +1,10 @@
 spring:
   application:
     name: demo
+  rocketmq:
+    name-server: namesrv.rocketmq.orb.local:9876
+    producer:
+      group: test-producer-group
 
 redis:
   cluster:
