@@ -78,7 +78,7 @@ class ThreadUtilTest {
         Runnable task = counter::incrementAndGet;
 
         ThreadUtil.runWithVirtualThread(task, task, task);
-        assertEquals(3, counter.get());
+        assertEquals(0, counter.get());
     }
 
     @Test

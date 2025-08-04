@@ -34,7 +34,7 @@ public class JedisClusterConfig {
                     properties.getTimeout(),
                     properties.getTimeout(),
                     properties.getMaxAttempts(),
-                    new GenericObjectPoolConfig());
+                    new GenericObjectPoolConfig<>());
         } else {
             return new JedisCluster(
                     nodes,
@@ -42,7 +42,7 @@ public class JedisClusterConfig {
                     properties.getTimeout(),
                     properties.getMaxAttempts(),
                     properties.getPassword(),
-                    new GenericObjectPoolConfig());
+                    new GenericObjectPoolConfig<>());
         }
     }
 }
