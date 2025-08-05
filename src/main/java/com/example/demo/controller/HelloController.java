@@ -12,7 +12,7 @@ import org.springframework.web.bind.annotation.RestController;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
-import com.example.demo.service.HelloService;
+import com.example.demo.application.service.HelloService;
 
 @RestController
 @RequestMapping("/api")

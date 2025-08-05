@@ -1,4 +1,4 @@
-package com.example.demo.service;
+package com.example.demo.application.service;
 
 import lombok.Setter;
 import org.apache.rocketmq.spring.core.RocketMQTemplate;

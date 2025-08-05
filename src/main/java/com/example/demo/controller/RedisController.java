@@ -1,6 +1,6 @@
 package com.example.demo.controller;
 
-import com.example.demo.service.RedisService;
+import com.example.demo.application.service.RedisService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
