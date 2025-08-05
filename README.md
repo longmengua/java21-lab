@@ -8,18 +8,26 @@
 
 - com.example
   - application
-    - service/          // 用例層，呼叫 domain 和 infra
+    - command/          // 輸入參數包裝 (CQRS)
+    - event/            // 用來觸發其他應用層或外部行為，如：「發送 Email」「更新快取」「寫入審計日誌」
+    - scheduler/        // 排程任務
+    - service/          // 應用層呼叫 domain 和 infra
   - domain
-    - model/            // 實體、value object
+    - model/            // entity、value object、aggregate、
     - repository/       // 抽象介面
-    - event/            // domain event
+    - event/            // 業務模型的事件，如：「用戶註冊成功」「訂單已付款」「商品已下架」
   - infra
     - config/           // Redis、Kafka 等配置類
     - redis/            // Redis 實作類，例如 RedisCacheRepository
     - kafka/            // Kafka producer / consumer adapter
   - interfaces
-    - web/              // controller 層 (REST API)
     - consumer/         // 非同步接入，例如 Kafka 消費者
+    - web/              
+      - controller/     // controller 層 (REST API)
+      - dto/
+      - exception/
+      - interceptor/
+      - validator/
 
 ## Goals
 
