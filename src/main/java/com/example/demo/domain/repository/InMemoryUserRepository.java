@@ -26,4 +26,8 @@ public class InMemoryUserRepository implements UserRepository {
     public void deleteByUsername(String username) {
         storage.remove(username);
     }
+
+    public void clearAll() {
+        storage.clear();
+    }
 }

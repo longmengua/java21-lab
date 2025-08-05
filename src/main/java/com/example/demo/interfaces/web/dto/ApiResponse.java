@@ -1,5 +1,12 @@
 package com.example.demo.interfaces.web.dto;
 
+import lombok.*;
+
+@AllArgsConstructor
+@NoArgsConstructor
+@Getter
+@Setter
+@Builder
 public class ApiResponse<T> {
     private boolean success;
     private T data;
@@ -18,6 +25,4 @@ public class ApiResponse<T> {
         res.message = msg;
         return res;
     }
-
-    // Getters & Setters
 }

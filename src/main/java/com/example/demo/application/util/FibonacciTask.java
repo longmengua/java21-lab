@@ -1,4 +1,4 @@
-package com.example.demo.util;
+package com.example.demo.application.util;
 
 import java.util.concurrent.RecursiveTask;
 
