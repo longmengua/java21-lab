@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.demo.interfaces.web.controller;
 
 import com.example.demo.application.service.MultiThreadService;
 import org.springframework.beans.factory.annotation.Autowired;

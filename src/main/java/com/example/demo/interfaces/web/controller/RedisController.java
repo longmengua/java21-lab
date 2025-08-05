@@ -1,4 +1,4 @@
-package com.example.demo.controller;
+package com.example.demo.interfaces.web.controller;
 
 import com.example.demo.application.service.RedisService;
 import org.springframework.web.bind.annotation.*;
