@@ -28,11 +28,12 @@ dependencies {
     // ✅ Spring Boot 核心
     implementation("org.springframework.boot:spring-boot-starter")
 
-    // ✅ Flink 1.18.1（統一版本）
-    implementation("org.apache.flink:flink-streaming-java:1.18.1")
-    implementation("org.apache.flink:flink-clients:1.18.1")
-    implementation("org.apache.flink:flink-connector-kafka:1.18.1")
-    implementation("org.apache.flink:flink-json:1.18.1") // 如使用 JSON 反序列化可加
+    // ✅ Flink
+    implementation("org.apache.flink:flink-streaming-java:1.17.2")
+    implementation("org.apache.flink:flink-clients:1.17.2")
+    implementation("org.apache.flink:flink-json:1.17.2")
+    // https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka
+    implementation("org.apache.flink:flink-connector-kafka:1.17.2")
 
     // ✅ ClickHouse JDBC
     implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.3.2")
