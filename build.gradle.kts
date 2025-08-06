@@ -25,31 +25,28 @@ repositories {
 }
 
 dependencies {
-    // ✅ Spring & Others
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    // ✅ Spring Boot 核心
+    implementation("org.springframework.boot:spring-boot-starter")
+
+    // ✅ Flink 1.18.1（統一版本）
+    implementation("org.apache.flink:flink-streaming-java:1.18.1")
+    implementation("org.apache.flink:flink-clients:1.18.1")
+    implementation("org.apache.flink:flink-connector-kafka:1.18.1")
+    implementation("org.apache.flink:flink-json:1.18.1") // 如使用 JSON 反序列化可加
+
+    // ✅ ClickHouse JDBC
+    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.3.2")
+
+    // ✅ JSON 處理
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
+
+    // ✅ 其他工具（如使用）
     implementation("redis.clients:jedis:4.4.3")
     implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3") {
         exclude(group = "com.vaadin.external.google", module = "android-json")
     }
 
-    // ✅ Flink Core
-    implementation("org.apache.flink:flink-streaming-java:1.19.0")
-    implementation("org.apache.flink:flink-clients:1.19.0")
-
-    // ✅ Kafka 連接器（包含 FlinkKafkaConsumer）
-//    implementation("org.apache.flink:flink-connector-kafka:1.19.0")
-
-    // ✅ ClickHouse JDBC
-    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.3.2")
-
-    // ✅ JSON 解析
-    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
-
-    // ✅ Lombok
-    compileOnly("org.projectlombok:lombok:1.18.30")
-    annotationProcessor("org.projectlombok:lombok:1.18.30")
-
-    // ✅ 測試依賴
+    // ✅ 測試
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
@@ -65,7 +62,7 @@ tasks.withType<Test> {
     }
 }
 
-// ✅ Jacoco 設定（如需覆蓋率報告，可啟用）
+// ✅ Jacoco 設定
 jacoco {
     toolVersion = "0.8.11"
 }
@@ -77,4 +74,3 @@ tasks.jacocoTestReport {
         html.required.set(true)
     }
 }
-
