@@ -17,7 +17,6 @@ import org.springframework.stereotype.Component;
 
 import java.sql.*;
 import java.time.Instant;
-import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -106,7 +105,7 @@ public class KafkaToClickHouseJob {
                 for (KafkaToClickhouseEvent e : buffer) {
                     stmt.setLong(1, e.getUserId());
                     stmt.setString(2, e.getAction());
-                    stmt.setTimestamp(3, Timestamp.valueOf(e.getEventTime().atZone(ZoneId.systemDefault()).toLocalDateTime().withNano(0)));
+                    stmt.setTimestamp(3, Timestamp.from(e.getEventTime()));
                     stmt.addBatch();
                 }
                 stmt.executeBatch();
