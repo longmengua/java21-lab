@@ -20,6 +20,17 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 
+/***
+ * 啟動 Spring Boot 應用
+ *     │
+ *     ├─ 掃描到 KafkaToClickHouseJob 被註解為 @Component
+ *     │
+ *     ├─ 實例化 KafkaToClickHouseJob Bean
+ *     │
+ *     └─ 調用 @PostConstruct 標註的方法 → startFlinkJob()
+ *               │
+ *               └──> Flink job 就開始執行（非同步）
+ * */
 @Component
 public class KafkaToClickHouseJob {
 
