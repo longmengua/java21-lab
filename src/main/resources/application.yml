@@ -10,6 +10,7 @@ spring:
 
   datasource:
     mysql:
+      enabled: false
       url: jdbc:mysql://mysql.sql.orb.local:3306/testdb
       username: root
       password:

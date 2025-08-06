@@ -11,9 +11,9 @@ import java.util.Map;
 @Service
 public class ReportService {
 
-    @Autowired
-    @Qualifier("mysqlJdbcTemplate")
-    private JdbcTemplate mysqlJdbcTemplate;
+//    @Autowired
+//    @Qualifier("mysqlJdbcTemplate")
+//    private JdbcTemplate mysqlJdbcTemplate;
 
     @Autowired
     @Qualifier("clickhouseJdbcTemplate")

@@ -1,32 +1,38 @@
 package com.example.demo.application.service;
 
+import lombok.AllArgsConstructor;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Service;
 import redis.clients.jedis.JedisCluster;
 
 @Service
+@ConditionalOnProperty(
+    prefix = "spring.redis.cluster",
+    name = "enabled",
+    havingValue = "true",
+    matchIfMissing = true
+)
 public class RedisService {
 
-    private final JedisCluster jedisCluster;
-
-    public RedisService(JedisCluster jedisCluster) {
-        this.jedisCluster = jedisCluster;
-    }
+    @Autowired
+    private JedisCluster jedisCluster;
 
     public void set(String key, String value) {
-        jedisCluster.set(key, value);
+        this.jedisCluster.set(key, value);
     }
 
     public String get(String key) {
-        return jedisCluster.get(key);
+        return this.jedisCluster.get(key);
     }
 
     public void delete(String key) {
-        jedisCluster.del(key);
+        this.jedisCluster.del(key);
     }
 
     public String reset() {
         try {
-            for (String nodeKey : jedisCluster.getClusterNodes().keySet()) {
+            for (String nodeKey : this.jedisCluster.getClusterNodes().keySet()) {
                 String[] parts = nodeKey.split(":");
                 String host = parts[0];
                 int port = Integer.parseInt(parts[1]);
