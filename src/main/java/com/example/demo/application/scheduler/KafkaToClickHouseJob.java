@@ -17,6 +17,7 @@ import org.springframework.stereotype.Component;
 
 import java.sql.*;
 import java.time.Instant;
+import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,9 +41,12 @@ public class KafkaToClickHouseJob {
 
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
 
+        // ✅ 設定 Flink 全域併行度（parallelism）
+        env.setParallelism(2); // 可依 CPU 調整，例如 2 核心就設 2
+
         // ✅ Kafka Source (new API)
         KafkaSource<String> source = KafkaSource.<String>builder()
-                .setBootstrapServers("localhost:9092")
+                .setBootstrapServers("single-kafka.kafka.orb.local:9092")
                 .setTopics("events")
                 .setGroupId("flink-consumer")
                 .setValueOnlyDeserializer(new SimpleStringSchema())
@@ -98,14 +102,19 @@ public class KafkaToClickHouseJob {
         }
 
         private void flush() throws SQLException {
-            for (KafkaToClickhouseEvent e : buffer) {
-                stmt.setLong(1, e.getUserId());
-                stmt.setString(2, e.getAction());
-                stmt.setTimestamp(3, Timestamp.from(e.getEventTime()));
-                stmt.addBatch();
+            try {
+                for (KafkaToClickhouseEvent e : buffer) {
+                    stmt.setLong(1, e.getUserId());
+                    stmt.setString(2, e.getAction());
+                    stmt.setTimestamp(3, Timestamp.valueOf(e.getEventTime().atZone(ZoneId.systemDefault()).toLocalDateTime().withNano(0)));
+                    stmt.addBatch();
+                }
+                stmt.executeBatch();
+            } catch (SQLException ex) {
+                ex.printStackTrace(); // 可以換成 log
+            } finally {
+                buffer.clear();
             }
-            stmt.executeBatch();
-            buffer.clear();
         }
 
         @Override

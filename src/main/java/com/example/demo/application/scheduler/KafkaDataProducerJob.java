@@ -32,7 +32,7 @@ public class KafkaDataProducerJob {
 
     public KafkaDataProducerJob() {
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "single-kafka.kafka.orb.local:9092");
         props.put(ProducerConfig.ACKS_CONFIG, "1");
         props.put(ProducerConfig.LINGER_MS_CONFIG, "5");
         props.put(ProducerConfig.BATCH_SIZE_CONFIG, 32_768); // 32KB batch
