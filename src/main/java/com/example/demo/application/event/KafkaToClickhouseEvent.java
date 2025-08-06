@@ -1,17 +1,17 @@
 package com.example.demo.application.event;
 
-import jdk.jfr.Event;
 import lombok.*;
-
 
 import java.time.Instant;
 
-@AllArgsConstructor
-@NoArgsConstructor
-@Builder
 @Setter
 @Getter
-public class KafkaToClickhouseEvent extends Event {
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
+public class KafkaToClickhouseEvent {
+
+    // Getter and Setter
     private long userId;
     private String action;
     private Instant eventTime;

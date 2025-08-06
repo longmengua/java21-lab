@@ -1,17 +1,21 @@
 spring:
   application:
     name: demo
+
+  redis:
+    cluster:
+      enabled: true
+      nodes:
+        - redis-1.redis.orb.local:6379
+        - redis-2.redis.orb.local:6379
+        - redis-3.redis.orb.local:6379
+      timeout: 2000
+      max-attempts: 3
+      # password: your-password # 如果沒設密碼，這行可以移除
+
   rocketmq:
     name-server: namesrv.rocketmq.orb.local:9876
     producer:
       group: test-producer-group
-
-redis:
-  cluster:
-    nodes:
-      - redis-1.redis.orb.local:6379
-      - redis-2.redis.orb.local:6379
-      - redis-3.redis.orb.local:6379
-    timeout: 2000
-    max-attempts: 3
-    password:
+      send-message-timeout: 3000
+      retry-times-when-send-failed: 2

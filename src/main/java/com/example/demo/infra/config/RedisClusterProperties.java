@@ -1,20 +1,21 @@
 package com.example.demo.infra.config;
 
-import lombok.*;
+import lombok.Getter;
+import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
-import org.springframework.context.annotation.Primary;
+import org.springframework.stereotype.Component;
 
 import java.util.List;
 
-@Primary
-@ConfigurationProperties(prefix = "redis.cluster")
-@Getter
 @Setter
-@NoArgsConstructor
-@AllArgsConstructor
+@Getter
+@Component
+@ConfigurationProperties(prefix = "spring.redis.cluster")
 public class RedisClusterProperties {
     private List<String> nodes;
     private int timeout = 2000;
     private int maxAttempts = 3;
     private String password;
+    private boolean enabled = true;
+
 }

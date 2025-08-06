@@ -16,8 +16,16 @@ java {
     withSourcesJar()
 }
 
-tasks.withType<JavaCompile> {
-    options.encoding = "UTF-8"
+tasks.named<JavaExec>("bootRun") {
+    jvmArgs = listOf(
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+    )
+}
+
+tasks.withType<Test> {
+    jvmArgs = listOf(
+        "--add-opens", "java.base/java.lang=ALL-UNNAMED"
+    )
 }
 
 repositories {
@@ -27,6 +35,7 @@ repositories {
 dependencies {
     // ✅ Spring Boot 核心
     implementation("org.springframework.boot:spring-boot-starter")
+    implementation("org.springframework.boot:spring-boot-starter-webflux")
 
     // ✅ Flink
     implementation("org.apache.flink:flink-streaming-java:1.17.2")
@@ -44,6 +53,7 @@ dependencies {
     // ✅ lombok
     // https://mvnrepository.com/artifact/org.projectlombok/lombok
     implementation("org.projectlombok:lombok:1.18.38")
+    annotationProcessor("org.projectlombok:lombok:1.18.38")
 
     // ✅ 其他工具（如使用）
     implementation("redis.clients:jedis:4.4.3")
