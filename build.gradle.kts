@@ -25,18 +25,31 @@ repositories {
 }
 
 dependencies {
-    // ✅ 核心依賴
-    implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3") {
-        exclude(group = "com.vaadin.external.google", module = "android-json") // 避免 JSONObject 衝突
-    }
+    // ✅ Spring & Others
     implementation("org.springframework.boot:spring-boot-starter-webflux")
     implementation("redis.clients:jedis:4.4.3")
+    implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3") {
+        exclude(group = "com.vaadin.external.google", module = "android-json")
+    }
+
+    // ✅ Flink Core
+    implementation("org.apache.flink:flink-streaming-java:1.19.0")
+    implementation("org.apache.flink:flink-clients:1.19.0")
+
+    // ✅ Kafka 連接器（包含 FlinkKafkaConsumer）
+//    implementation("org.apache.flink:flink-connector-kafka:1.19.0")
+
+    // ✅ ClickHouse JDBC
+    implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.3.2")
+
+    // ✅ JSON 解析
+    implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
     // ✅ Lombok
     compileOnly("org.projectlombok:lombok:1.18.30")
     annotationProcessor("org.projectlombok:lombok:1.18.30")
 
-    // ✅ 測試依賴（內含 JUnit5、Mockito、AssertJ 等）
+    // ✅ 測試依賴
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
