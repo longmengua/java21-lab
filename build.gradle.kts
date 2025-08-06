@@ -33,10 +33,17 @@ repositories {
 }
 
 dependencies {
-    // ✅ Spring Boot 核心
-    implementation("org.springframework.boot:spring-boot-starter")
-    implementation("org.springframework.boot:spring-boot-starter-webflux")
+    // ✅ Spring Boot Web（⚠️ 這是關鍵）
+    implementation("org.springframework.boot:spring-boot-starter-web")
+
+    // ✅ Spring Boot JDBC
     implementation("org.springframework.boot:spring-boot-starter-jdbc")
+
+    // ✅ MySQL driver
+    implementation("com.mysql:mysql-connector-j")
+
+    implementation("org.springframework.boot:spring-boot-devtools")
+    implementation("org.springframework.boot:spring-boot-starter-actuator")
 
     // ✅ Flink
     implementation("org.apache.flink:flink-streaming-java:1.17.2")

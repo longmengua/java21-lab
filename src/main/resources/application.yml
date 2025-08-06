@@ -10,14 +10,14 @@ spring:
 
   datasource:
     mysql:
-      url: jdbc:mysql://localhost:3306/testdb
+      url: jdbc:mysql://mysql.sql.orb.local:3306/testdb
       username: root
       password:
       driver-class-name: com.mysql.cj.jdbc.Driver
 
   redis:
     cluster:
-      enabled: true
+      enabled: false
       nodes:
         - redis-1.redis.orb.local:6379
         - redis-2.redis.orb.local:6379
@@ -27,6 +27,7 @@ spring:
       # password: your-password # 如果沒設密碼，這行可以移除
 
   rocketmq:
+    enabled: false  # 暫時關閉
     name-server: namesrv.rocketmq.orb.local:9876
     producer:
       group: test-producer-group
