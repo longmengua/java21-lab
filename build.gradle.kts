@@ -41,6 +41,10 @@ dependencies {
     // ✅ JSON 處理
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
+    // ✅ lombok
+    // https://mvnrepository.com/artifact/org.projectlombok/lombok
+    implementation("org.projectlombok:lombok:1.18.38")
+
     // ✅ 其他工具（如使用）
     implementation("redis.clients:jedis:4.4.3")
     implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3") {
