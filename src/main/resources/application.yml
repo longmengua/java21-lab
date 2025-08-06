@@ -1,6 +1,19 @@
+server:
+  port: 8081
+
 spring:
   application:
     name: demo
+
+  clickhouse:
+    url: jdbc:clickhouse://clickhouse.clickhouse.orb.local:8123/default
+
+  datasource:
+    mysql:
+      url: jdbc:mysql://localhost:3306/testdb
+      username: root
+      password:
+      driver-class-name: com.mysql.cj.jdbc.Driver
 
   redis:
     cluster:

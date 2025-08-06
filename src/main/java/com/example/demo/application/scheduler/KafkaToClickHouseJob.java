@@ -19,6 +19,9 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 /***
  * 啟動 Spring Boot 應用
@@ -86,10 +89,22 @@ public class KafkaToClickHouseJob {
         private final List<KafkaToClickhouseEvent> buffer = new ArrayList<>();
         private static final int BATCH_SIZE = 100;
 
+        private transient ScheduledExecutorService monitorExecutor;
+
         @Override
         public void open(Configuration parameters) throws Exception {
             conn = DriverManager.getConnection("jdbc:clickhouse://localhost:8123/default");
             stmt = conn.prepareStatement("INSERT INTO flink_sink (user_id, action, event_time) VALUES (?, ?, ?)");
+
+            // ✅ 啟動背景監控任務，每 5 秒檢查 buffer 是否為空
+            monitorExecutor = Executors.newSingleThreadScheduledExecutor();
+            monitorExecutor.scheduleAtFixedRate(() -> {
+                if (buffer.isEmpty()) {
+                    System.out.println("🟡 Still waiting for data from Kafka...");
+                } else {
+                    System.out.println("📦 Buffer size: " + buffer.size());
+                }
+            }, 0, 5, TimeUnit.SECONDS);
         }
 
         @Override

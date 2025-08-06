@@ -4,7 +4,7 @@ import com.example.demo.application.service.RedisService;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/redis")
+@RequestMapping("/api/redis")
 public class RedisController {
 
     private final RedisService redisService;

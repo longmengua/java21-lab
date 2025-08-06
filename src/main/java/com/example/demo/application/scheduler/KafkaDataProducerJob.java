@@ -45,7 +45,9 @@ public class KafkaDataProducerJob {
     public void startProducing() {
         Thread thread = new Thread(() -> {
             System.out.println("🚀 Kafka Producer Job started. Sending " + RECORDS_PER_SECOND + " records per second...");
-            while (true) {
+            int second = 0;
+            int stopSecond = 5;
+            while (second != stopSecond) {
                 long start = System.currentTimeMillis();
                 for (int i = 0; i < RECORDS_PER_SECOND; i++) {
                     try {
@@ -60,8 +62,10 @@ public class KafkaDataProducerJob {
                 if (sleepTime > 0) {
                     try {
                         Thread.sleep(sleepTime);
-                    } catch (InterruptedException ignored) {}
+                    } catch (InterruptedException ignored) {
+                    }
                 }
+                second++;
             }
         });
         thread.setDaemon(true);
