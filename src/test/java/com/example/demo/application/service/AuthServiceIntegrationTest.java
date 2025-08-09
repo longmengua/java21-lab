@@ -1,7 +1,8 @@
 package com.example.demo.application.service;
 
-import com.example.demo.domain.model.User;
-import com.example.demo.domain.repository.InMemoryUserRepository;
+import com.example.demo.application.usecase.AuthUsecase;
+import com.example.demo.domain.model.user.User;
+import com.example.demo.infra.repository.InMemoryUserRepository;
 import com.example.demo.domain.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -25,13 +26,13 @@ class AuthServiceIntegrationTest {
         }
 
         @Bean
-        public AuthService authService(UserRepository userRepository) {
-            return new AuthService(userRepository);
+        public AuthUsecase authService(UserRepository userRepository) {
+            return new AuthUsecase(userRepository);
         }
     }
 
     @Autowired
-    private AuthService authService;
+    private AuthUsecase authUsecase;
 
     @Autowired
     private UserRepository userRepository;
@@ -45,14 +46,14 @@ class AuthServiceIntegrationTest {
 
     @Test
     void testRegister_thenLogin_thenLogout() {
-        authService.register("waltor", "123456", "0912345678");
+        authUsecase.register("waltor", "123456", "0912345678");
 
         var user = userRepository.findByUsername("waltor");
         assertTrue(user.isPresent());
         assertEquals("123456", user.get().getPassword());
 
-        assertDoesNotThrow(() -> authService.login("waltor", "123456"));
-        assertDoesNotThrow(() -> authService.logout("waltor"));
+        assertDoesNotThrow(() -> authUsecase.login("waltor", "123456"));
+        assertDoesNotThrow(() -> authUsecase.logout("waltor"));
     }
 
     @Test
@@ -60,7 +61,7 @@ class AuthServiceIntegrationTest {
         userRepository.save(new User("waltor", "pw", "0912"));
 
         RuntimeException e = assertThrows(RuntimeException.class, () ->
-                authService.register("waltor", "pw", "0912")
+                authUsecase.register("waltor", "pw", "0912")
         );
 
         assertEquals("使用者已存在", e.getMessage());
@@ -71,7 +72,7 @@ class AuthServiceIntegrationTest {
         userRepository.save(new User("waltor", "correct", "0912"));
 
         RuntimeException e = assertThrows(RuntimeException.class, () ->
-                authService.login("waltor", "wrong")
+                authUsecase.login("waltor", "wrong")
         );
 
         assertEquals("密碼錯誤", e.getMessage());

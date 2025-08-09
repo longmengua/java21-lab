@@ -6,6 +6,10 @@
 
 ## Architecture
 
+- 📦 domain：定義需要什麼資料操作（interface）
+- 🧠 application：決定何時用這些操作來做流程（呼叫 interface）(是不能知道任何具體技術的)
+- 🔧 infra：實作具體怎麼操作資料（implements interface）
+
 - com.example
   - application
     - command/          // 輸入參數包裝 (CQRS)

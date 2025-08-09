@@ -1,6 +1,6 @@
 package com.example.demo.interfaces.web.controller;
 
-import com.example.demo.application.service.ReportService;
+import com.example.demo.infra.olap.ClickhouseService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -13,11 +13,11 @@ import org.springframework.web.bind.annotation.RestController;
 public class ReportController {
 
     @Autowired
-    private ReportService reportService;
+    private ClickhouseService clickhouseService;
 
     @GetMapping("/list")
     @ResponseStatus(HttpStatus.OK)
     public Object getHello() {
-        return reportService.fetchData();
+        return clickhouseService.fetchData();
     }
 }
