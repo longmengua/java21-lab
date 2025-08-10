@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import org.apache.kafka.clients.producer.ProducerRecord;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.kafka.core.KafkaTemplate;
 import org.springframework.stereotype.Component;
 
@@ -16,18 +17,18 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
 /**
- * MockProducer
+ * <p>MockProducer</p>
  *
  * 功能：
  *   - 用來在本地或測試環境中模擬 Kafka 事件流
  *   - 定時發送模擬的交易事件（下單 + 撤單），用來觸發風控規則
- *
  * 測試目的：
  *   - 模擬「高頻快撤單」行為
  *   - 驗證風控系統是否正確檢測與產生告警
  */
 @Component
-public class MockProducer {
+@ConditionalOnProperty(name = "mock.kafka.risk-control", havingValue = "true") // 只有 true 才會建立這個 Bean
+public class MockProducerForRiskControl {
 
     /** Spring Kafka 用於發送訊息到 Kafka 的模板物件 */
     private final KafkaTemplate<String, String> kafka;
@@ -43,7 +44,7 @@ public class MockProducer {
     String EVENTS;
 
     /** 建構子，注入 KafkaTemplate */
-    public MockProducer(KafkaTemplate<String, String> kafka) {
+    public MockProducerForRiskControl(KafkaTemplate<String, String> kafka) {
         this.kafka = kafka;
     }
 

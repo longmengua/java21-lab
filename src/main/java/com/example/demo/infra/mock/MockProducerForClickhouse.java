@@ -1,4 +1,4 @@
-package com.example.demo.application.scheduler;
+package com.example.demo.infra.mock;
 
 import com.example.demo.infra.props.KafkaProps;
 import com.example.demo.infra.props.TopicsProps;
@@ -19,7 +19,7 @@ import java.util.concurrent.ThreadLocalRandom;
  * <p>Kafka 模擬資料生產器</p>
  *
  * 啟動條件：
- *   1. application.yml 中 `mock.kafka=true`
+ *   1. application.yml 中 `mock.kafka.clickhouse=true`
  *   2. KafkaProps 中 `kafka.enabled=true`
  *   3. 已設定有效的 kafka.bootstrap-servers
  *   4. 已設定 topics.events
@@ -29,8 +29,8 @@ import java.util.concurrent.ThreadLocalRandom;
  *   - 持續 M 秒，結束後自動 flush 並關閉 producer
  */
 @Component
-@ConditionalOnProperty(name = "mock.kafka", havingValue = "true") // 只有 mock.kafka=true 才會建立這個 Bean
-public class KafkaDataProducerJob {
+@ConditionalOnProperty(name = "mock.kafka.clickhouse", havingValue = "true") // 只有 true 才會建立這個 Bean
+public class MockProducerForClickhouse {
 
     /** Kafka 相關設定（來自 application.yml 的 kafka.* 區塊） */
     private final KafkaProps kafkaProps;
@@ -48,7 +48,7 @@ public class KafkaDataProducerJob {
     private Thread worker;
 
     /** 建構子注入 Kafka 與 Topics 設定 */
-    public KafkaDataProducerJob(KafkaProps kafkaProps, TopicsProps topics) {
+    public MockProducerForClickhouse(KafkaProps kafkaProps, TopicsProps topics) {
         this.kafkaProps = kafkaProps;
         this.topics = topics;
     }

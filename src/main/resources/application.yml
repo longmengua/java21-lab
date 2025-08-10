@@ -3,7 +3,9 @@ server:
 
 # Mock 用
 mock:
-  kafka: false
+  kafka:
+    clickhouse: false
+    risk-control: false
 
 # MQ topic(不走 spring boot 配置)
 topics:
