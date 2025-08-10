@@ -1,15 +1,13 @@
 package com.example.demo.infra.props;
 
+import jakarta.validation.constraints.NotBlank;
 import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter @Setter
-@ConfigurationProperties(prefix = "spring.clickhouse")
+@ConfigurationProperties(prefix = "clickhouse")
 public class ClickHouseProps {
-    /** spring.clickhouse.enabled； */
-    private boolean enabled;
-    /** spring.clickhouse.url */
+    @NotBlank(message = "ClickHouse URL 不可為空")
     private String url;
 }
-

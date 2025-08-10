@@ -123,7 +123,9 @@ public class KafkaToClickHouseJob {
                     stmt.setTimestamp(3, Timestamp.from(e.getEventTime()));
                     stmt.addBatch();
                 }
-                stmt.executeBatch();
+                int[] result = stmt.executeBatch();
+                System.out.printf("✅ ClickHouse batch insert success: %d records at %s%n",
+                        result.length, Instant.now()); // 成功寫入的筆數與時間
             } catch (SQLException ex) {
                 ex.printStackTrace(); // 可以換成 log
             } finally {

@@ -1,4 +1,3 @@
-// ClickHouseDataSourceConfig.java
 package com.example.demo.infra.config;
 
 import com.example.demo.infra.props.ClickHouseProps;
@@ -14,25 +13,28 @@ import javax.sql.DataSource;
 
 @Configuration
 @EnableConfigurationProperties(ClickHouseProps.class)
-public class ClickHouseDataSourceConfig {
+public class ClickHouseConfig {
 
     @Bean(name = "clickhouseDataSource")
     @ConditionalOnProperty(
-            prefix = "spring.clickhouse",
+            prefix = "clickhouse",
             name = "enabled",
             havingValue = "true",
-            matchIfMissing = true   // 讓沒設定 enabled 也能啟用（預設 true）
+            matchIfMissing = false // 必須顯式開啟才建立
     )
     public DataSource clickHouseDataSource(ClickHouseProps props) throws Exception {
+        if (props.getUrl() == null || props.getUrl().isBlank()) {
+            throw new IllegalArgumentException("ClickHouse URL 不可為空，請檢查配置 clickhouse.url");
+        }
         return new ClickHouseDataSource(props.getUrl());
     }
 
     @Bean(name = "clickhouseJdbcTemplate")
     @ConditionalOnProperty(
-            prefix = "spring.clickhouse",
+            prefix = "clickhouse",
             name = "enabled",
             havingValue = "true",
-            matchIfMissing = true
+            matchIfMissing = false
     )
     public JdbcTemplate clickhouseJdbcTemplate(@Qualifier("clickhouseDataSource") DataSource ds) {
         return new JdbcTemplate(ds);

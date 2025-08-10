@@ -14,7 +14,7 @@ import java.util.Set;
 @Configuration
 public class JedisConfig {
 
-    @Bean
+    @Bean(name = "jedisClient")
     @Primary
     public JedisCommands redisClient(RedisProps props) {
         List<String> nodes = props.getNodes();
@@ -22,7 +22,6 @@ public class JedisConfig {
             throw new IllegalArgumentException("redis.nodes 不可為空");
         }
 
-        // 用 Jedis 的 ClientConfig，避免踩建構子參數版本差異
         DefaultJedisClientConfig cfg = DefaultJedisClientConfig.builder()
                 .connectionTimeoutMillis(props.getTimeoutMillis())
                 .socketTimeoutMillis(props.getTimeoutMillis())
@@ -30,19 +29,32 @@ public class JedisConfig {
                 .build();
 
         if (nodes.size() == 1) {
-            // Single
-            String[] hp = parseHostPort(nodes.getFirst());
+            // 單機模式
+            String[] hp = parseHostPort(nodes.get(0));
             HostAndPort hap = new HostAndPort(hp[0], Integer.parseInt(hp[1]));
-            return new JedisPooled(hap, cfg);
+            JedisPooled jedis = new JedisPooled(hap, cfg);
+            // 預檢測
+            try {
+                jedis.ping();
+            } catch (Exception e) {
+                throw new IllegalStateException("無法連線到 Redis 單機節點: " + hap, e);
+            }
+            return jedis;
         } else {
-            // Cluster
+            // Cluster 模式
             Set<HostAndPort> clusterNodes = new HashSet<>();
             for (String n : nodes) {
                 String[] hp = parseHostPort(n);
                 clusterNodes.add(new HostAndPort(hp[0], Integer.parseInt(hp[1])));
             }
-            // Jedis 4/5：推薦這種簽名
-            return new JedisCluster(clusterNodes, cfg, props.getMaxAttempts());
+            JedisCluster cluster = new JedisCluster(clusterNodes, cfg, props.getMaxAttempts());
+            // 預檢測
+            try {
+                cluster.ping();
+            } catch (Exception e) {
+                throw new IllegalStateException("無法連線到 Redis Cluster 節點: " + clusterNodes, e);
+            }
+            return cluster;
         }
     }
 

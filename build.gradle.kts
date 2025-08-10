@@ -36,7 +36,6 @@ dependencies {
     // Spring Boot 基礎
     implementation("org.springframework.boot:spring-boot-starter-web")       // Web (REST API)
     implementation("org.springframework.boot:spring-boot-starter-jdbc")      // JDBC 支援
-    implementation("org.springframework.boot:spring-boot-starter-data-redis")// Spring Data Redis
     implementation("com.mysql:mysql-connector-j")                            // MySQL driver
     implementation("org.springframework.boot:spring-boot-devtools")          // 開發熱重載
     implementation("org.springframework.boot:spring-boot-starter-actuator")  // 健康檢查與監控

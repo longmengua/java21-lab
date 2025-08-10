@@ -4,13 +4,13 @@ import lombok.Getter;
 import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
-@Getter @Setter
+@Getter
+@Setter
 @ConfigurationProperties(prefix = "topics")
 public class TopicsProps {
-    /** topics.events */
+    /** topics.events，例如：risk-events */
     private String events;
 
-    /** topics.alerts */
+    /** topics.alerts，例如：risk-alerts */
     private String alerts;
 }
-

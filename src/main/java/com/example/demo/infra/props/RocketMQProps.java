@@ -5,7 +5,7 @@ import lombok.Setter;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 
 @Getter @Setter
-@ConfigurationProperties(prefix = "spring.rocketmq")
+@ConfigurationProperties(prefix = "rocketmq")
 public class RocketMQProps {
     /** spring.rocketmq.enabled（自定義旗標） */
     private boolean enabled = false;

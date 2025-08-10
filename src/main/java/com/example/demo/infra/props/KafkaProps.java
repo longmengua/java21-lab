@@ -6,24 +6,39 @@ import org.springframework.boot.context.properties.ConfigurationProperties;
 
 import java.util.Map;
 
-@Getter @Setter
-@ConfigurationProperties(prefix = "spring.kafka")
+@Getter
+@Setter
+@ConfigurationProperties(prefix = "kafka")
 public class KafkaProps {
-    /** spring.kafka.enabled（自定義旗標，方便你用 @ConditionalOnProperty 控制） */
+    /** kafka.enabled（自定義旗標，方便用 @ConditionalOnProperty 控制） */
     private boolean enabled = true;
 
-    /** spring.kafka.bootstrap-servers */
+    /** kafka.bootstrap-servers */
     private String bootstrapServers;
 
-    private KafkaProps.KafkaStreamsProps cluster = new KafkaStreamsProps();
+    /** kafka.streams.* */
+    private KafkaStreamsProps streams = new KafkaStreamsProps();
 
-    @Getter @Setter
+    /** kafka.producer.* */
+    private ProducerProps producer = new ProducerProps();
+
+    @Getter
+    @Setter
     public static class KafkaStreamsProps {
-        /** spring.kafka.streams.application-id */
+        /** kafka.streams.application-id */
         private String applicationId;
 
-        /** spring.kafka.streams.properties.* */
+        /** kafka.streams.properties.* */
         private Map<String, String> properties;
     }
-}
 
+    @Getter
+    @Setter
+    public static class ProducerProps {
+        /** kafka.producer.records-per-second */
+        private int recordsPerSecond = 0;
+
+        /** kafka.producer.duration-seconds */
+        private int durationSeconds = 0;
+    }
+}
