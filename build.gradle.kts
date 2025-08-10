@@ -69,6 +69,9 @@ dependencies {
         exclude(group = "com.vaadin.external.google", module = "android-json")
     }
 
+    // ✅ MVEL 表達式引擎
+    implementation("org.mvel:mvel2:2.4.12.Final")
+
     // ✅ 測試
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
