@@ -13,6 +13,7 @@ import org.apache.flink.streaming.api.environment.StreamExecutionEnvironment;
 import org.apache.flink.connector.kafka.source.KafkaSource;
 import org.apache.flink.connector.kafka.source.enumerator.initializer.OffsetsInitializer;
 import org.apache.flink.streaming.api.functions.sink.RichSinkFunction;
+import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
 import org.springframework.stereotype.Component;
 
 import java.sql.*;
@@ -28,12 +29,13 @@ import java.util.concurrent.TimeUnit;
  *
  * 啟動流程：
  *   1. Spring Boot 啟動時掃描到本類別（@Component）
- *   2. 實例化 KafkaToClickHouseJob Bean
+ *   2. 實例化 FlinkJob Bean
  *   3. 調用 @PostConstruct 標註的 startFlinkJob()
  *   4. 初始化 Flink 環境並啟動 DataStream 任務（非同步）
  */
 @Component
-public class KafkaToClickHouseJob {
+@ConditionalOnProperty(name = "flink.enabled", havingValue = "true") // 只有 true 才會建立這個 Bean
+public class FlinkJob {
 
     /**
      * 啟動 Flink Job

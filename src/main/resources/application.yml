@@ -5,7 +5,7 @@ server:
 mock:
   kafka:
     clickhouse: false
-    risk-control: false
+    risk-control: true
 
 # MQ topic(不走 spring boot 配置)
 topics:
@@ -47,6 +47,10 @@ kafka:
   producer:
     records-per-second: 10
     duration-seconds: 5
+
+# Flink 配置
+flink:
+  enabled: false
 
 # MySQL 配置
 datasource:
