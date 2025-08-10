@@ -46,25 +46,56 @@
 |     infra                | <- technical detail (DB, Kafka, Redis)
 +--------------------------+
 
+## Gradle commands
+
+- List up Tasks of gradle
+  - ./gradlew tasks
+  - ./gradlew bootRun
+  - ./gradlew clean build --refresh-dependencies
+  - ./gradlew clean test --stacktrace
+  - ./gradlew test --info
 
 ## Goals
 
 - phase 1
-    - try spring webFlux
-
+  - try spring webFlux
 - phase 2
-    - Try multithreading and relevant cases.
-
+  - Try multithreading and relevant cases.
 - phase 3
-    - write multi-thread util and unit test cases.
-        - update from 17 to 21 for testing vitual thread.
+  - write multi-thread util and unit test cases.
+    - update from 17 to 21 for testing vitual thread.
+- phase 4
+  - make a "High-Frequency Trading Risk Control System" 
 
-## Gradle commands
+## Kafka Event for HFTRCS
 
-- List up Tasks of gradle
-    - ./gradlew tasks
-    - ./gradlew bootRun
-    - ./gradlew clean build --refresh-dependencies
-    - ./gradlew clean test --stacktrace
-    - ./gradlew test --info
+- risk-events 的 value（範例）
+  - type: 
+  - side: 交易/委託方向
+  - ts: 毫秒時間戳
+```json
+{
+  "accountId": "u123",
+  "ip": "10.0.0.8",
+  "symbol": "BTCUSDT",
+  "type": "PLACE|CANCEL|TRADE",
+  "side": "BUY|SELL",         
+  "ts": 1723270400000         
+}
+```
 
+- 整包規則配置 JSON（最小示例）
+  - 更新步驟 
+    - SET risk:cfg:all "<上面這一段JSON>"
+    - PUBLISH risk:cfg:channel "reload"
+  - 你改 windowSec/threshold 後第二步一發，新閾值立即生效（我們用自研時間桶，不依賴 Kafka window，所以不用重啟）。
+```json
+{
+  "highfreq": {
+    "rules": [
+      { "id": "fast_cancel_60", "windowSec": 60, "threshold": 10, "type": "FAST_CANCEL" },
+      { "id": "cancel_rate_60", "windowSec": 60, "threshold": 90, "type": "CANCEL_RATE" }
+    ]
+  }
+}
+```

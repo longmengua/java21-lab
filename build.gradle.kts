@@ -33,46 +33,46 @@ repositories {
 }
 
 dependencies {
-    // ✅ Spring Boot Web（⚠️ 這是關鍵）
-    implementation("org.springframework.boot:spring-boot-starter-web")
+    // Spring Boot 基礎
+    implementation("org.springframework.boot:spring-boot-starter-web")       // Web (REST API)
+    implementation("org.springframework.boot:spring-boot-starter-jdbc")      // JDBC 支援
+    implementation("org.springframework.boot:spring-boot-starter-data-redis")// Spring Data Redis
+    implementation("com.mysql:mysql-connector-j")                            // MySQL driver
+    implementation("org.springframework.boot:spring-boot-devtools")          // 開發熱重載
+    implementation("org.springframework.boot:spring-boot-starter-actuator")  // 健康檢查與監控
 
-    // ✅ Spring Boot JDBC
-    implementation("org.springframework.boot:spring-boot-starter-jdbc")
-
-    // ✅ MySQL driver
-    implementation("com.mysql:mysql-connector-j")
-
-    implementation("org.springframework.boot:spring-boot-devtools")
-    implementation("org.springframework.boot:spring-boot-starter-actuator")
-
-    // ✅ Flink
+    // Flink 實時處理
     implementation("org.apache.flink:flink-streaming-java:1.17.2")
     implementation("org.apache.flink:flink-clients:1.17.2")
     implementation("org.apache.flink:flink-json:1.17.2")
-    // https://mvnrepository.com/artifact/org.apache.flink/flink-connector-kafka
-    implementation("org.apache.flink:flink-connector-kafka:1.17.2")
+    implementation("org.apache.flink:flink-connector-kafka:1.17.2")           // Flink Kafka 連接器
 
-    // ✅ ClickHouse JDBC
+    // ClickHouse JDBC
     implementation("ru.yandex.clickhouse:clickhouse-jdbc:0.3.2")
 
-    // ✅ JSON 處理
+    // JSON 處理
     implementation("com.fasterxml.jackson.core:jackson-databind:2.15.2")
 
-    // ✅ lombok
-    // https://mvnrepository.com/artifact/org.projectlombok/lombok
+    // Lombok（簡化 POJO 代碼）
     implementation("org.projectlombok:lombok:1.18.38")
     annotationProcessor("org.projectlombok:lombok:1.18.38")
 
-    // ✅ 其他工具（如使用）
+    // Redis 原生客戶端
     implementation("redis.clients:jedis:4.4.3")
+
+    // RocketMQ
     implementation("org.apache.rocketmq:rocketmq-spring-boot-starter:2.2.3") {
         exclude(group = "com.vaadin.external.google", module = "android-json")
     }
 
-    // ✅ MVEL 表達式引擎
+    // MVEL 表達式引擎（風控規則）
     implementation("org.mvel:mvel2:2.4.12.Final")
 
-    // ✅ 測試
+    // Kafka Streams 與 Spring Kafka（處理 Kafka 流式邏輯）
+    implementation("org.apache.kafka:kafka-streams")
+    implementation("org.springframework.kafka:spring-kafka")
+
+    // 測試
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")
     }
