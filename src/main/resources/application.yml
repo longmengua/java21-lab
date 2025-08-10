@@ -1,31 +1,37 @@
 server:
   port: 8081
 
+# MQ topic(不走 spring boot 配置)
+topics:
+  events: risk-events
+  alerts: risk-alerts
+
+# Redis 配置(不走 spring boot 默認配置)
+redis:
+  enabled: true
+  clusterMode: false
+  timeout: 2000 # 也可以寫 2s
+  max-attempts: 3
+  # password: your-password # 如果沒設密碼，這行可以移除
+  nodes:
+    - redis-single.redis.orb.local:6379
+
 spring:
   application:
     name: demo
 # Clickhouse 配置
   clickhouse:
+    enabled: false
     url: jdbc:clickhouse://clickhouse.clickhouse.orb.local:8123/default
 # MySQL 配置
   datasource:
+    enabled: false
     mysql:
-      enabled: false
       url: jdbc:mysql://mysql.sql.orb.local:3306/testdb
       username: root
       password:
       driver-class-name: com.mysql.cj.jdbc.Driver
-# Redis 配置
-  redis:
-    cluster:
-      enabled: false
-      nodes:
-        - redis-1.redis.orb.local:6379
-        - redis-2.redis.orb.local:6379
-        - redis-3.redis.orb.local:6379
-      timeout: 2000
-      max-attempts: 3
-      # password: your-password # 如果沒設密碼，這行可以移除
+
 # RocketMQ 配置
   rocketmq:
     enabled: false  # 暫時關閉
@@ -36,12 +42,9 @@ spring:
       retry-times-when-send-failed: 2
 # Kafka MQ 配置
   kafka:
+    enabled: true  # 暫時關閉
     bootstrap-servers: localhost:9092
     streams:
       application-id: hf-risk-custom-buckets
       properties:
         processing.guarantee: exactly_once_v2
-# MQ topic
-topics:
-  events: risk-events
-  alerts: risk-alerts

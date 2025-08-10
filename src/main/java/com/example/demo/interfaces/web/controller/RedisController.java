@@ -28,7 +28,7 @@ public class RedisController {
 
     // curl -X POST http://localhost:8080/redis/reset
     @GetMapping("/reset")
-    public String reset() {
-        return redisService.reset();
+    public void reset() {
+        redisService.flushAllCluster();
     }
 }
