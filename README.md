@@ -99,3 +99,17 @@
   }
 }
 ```
+
+## DFD for HFTRCS
+
+MockProducer (產生風控事件)
+-> Kafka Topic: risk-events
+-> Kafka Streams Topology
+-> Source: 讀取 risk-events
+-> Processor: RiskProcessor
+-> Redis (讀取/快取風控規則)
+-> 本地時間桶統計 (BucketedCounter / TwoBucketedCounters)
+-> 判斷是否超過門檻
+-> 生成 RiskAlert JSON
+-> Sink: risk-alerts
+-> 下游消費者 (DB 寫入 / 告警推送 / Lark 等)
