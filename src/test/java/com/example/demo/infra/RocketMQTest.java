@@ -66,7 +66,7 @@ public class RocketMQTest {
                     @Override
                     public ConsumeConcurrentlyStatus consumeMessage(List<MessageExt> msgs, ConsumeConcurrentlyContext context) {
                         for (MessageExt msg : msgs) {
-                            System.out.printf("📩 收到訊息：topic=%s, tag=%s, body=%s%n",
+                            System.out.printf("📩 收到訊息：topic=%s, tag=%s, body=%s",
                                     msg.getTopic(), msg.getTags(), new String(msg.getBody()));
                         }
                         return ConsumeConcurrentlyStatus.CONSUME_SUCCESS;

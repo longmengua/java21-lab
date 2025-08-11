@@ -4,6 +4,7 @@ import com.example.demo.application.event.KafkaToClickhouseEvent;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.flink.api.common.eventtime.WatermarkStrategy;
 import org.apache.flink.api.common.functions.RichMapFunction;
 import org.apache.flink.api.common.serialization.SimpleStringSchema;
@@ -20,9 +21,8 @@ import java.sql.*;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.TimeUnit;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 
 /***
  * <p>Kafka → Flink → ClickHouse 批量寫入任務</p>
@@ -35,6 +35,7 @@ import java.util.concurrent.TimeUnit;
  */
 @Component
 @ConditionalOnProperty(name = "flink.enabled", havingValue = "true") // 只有 true 才會建立這個 Bean
+@Slf4j
 public class FlinkJob {
 
     /**
@@ -43,7 +44,8 @@ public class FlinkJob {
      */
     @PostConstruct
     public void startFlinkJob() throws Exception {
-        System.out.println("✅ Starting Flink job...");
+        // ✅ 開始執行 Flink 前打印 log
+        log.info("✅ Starting Flink job...");
 
         // 建立 Flink 執行環境
         StreamExecutionEnvironment env = StreamExecutionEnvironment.getExecutionEnvironment();
@@ -96,30 +98,53 @@ public class FlinkJob {
      * - 透過 JDBC 連線 ClickHouse
      * - 使用 buffer 暫存事件，滿 BATCH_SIZE 筆再批量提交
      * - 會額外啟動監控執行緒，每 5 秒輸出 buffer 狀態（空/筆數）
+     * ⚠️ 注意：Flink 的算子在序列化/反序列化時，非 transient 欄位需要可序列化。
+     *         因此與外部資源（Connection、ExecutorService）相關欄位一律標記為 transient，
+     *         並在 open()/close() 生命週期中建立與釋放。
      */
     static class ClickHouseSink extends RichSinkFunction<KafkaToClickhouseEvent> {
-        private transient Connection conn; // ClickHouse JDBC 連線
-        private transient PreparedStatement stmt; // 預編譯 SQL
+        // --- 外部資源（在 open() 建立，在 close() 釋放） ---
+        private transient Connection conn;                 // ClickHouse JDBC 連線
+        private transient PreparedStatement stmt;          // 預編譯 SQL
+        private transient ScheduledExecutorService monitorExecutor; // 監控排程器
+        private final transient AtomicReference<ScheduledFuture<?>> monitorFutureRef = new AtomicReference<>();
+
+        // --- 批次緩衝 ---
         private final List<KafkaToClickhouseEvent> buffer = new ArrayList<>(); // 暫存事件
         private static final int BATCH_SIZE = 100; // 每批寫入筆數
-
-        private transient ScheduledExecutorService monitorExecutor; // buffer 監控執行緒
 
         @Override
         public void open(Configuration parameters) throws Exception {
             // 建立 ClickHouse 連線
+            // 如需帳密或連線池，請改為使用 DataSource 並從外部注入
             conn = DriverManager.getConnection("jdbc:clickhouse://localhost:8123/default");
+            //（可選）關閉 auto-commit 以提升批次性能；ClickHouse JDBC 通常會忽略，但保留語義
+            try { conn.setAutoCommit(true); } catch (Exception ignored) {}
+
+            // 預編譯 SQL（避免重複解析）
             stmt = conn.prepareStatement("INSERT INTO flink_sink (user_id, action, event_time) VALUES (?, ?, ?)");
 
-            // 啟動背景監控任務，每 5 秒輸出一次 buffer 狀態
-            monitorExecutor = Executors.newSingleThreadScheduledExecutor();
-            monitorExecutor.scheduleAtFixedRate(() -> {
-                if (buffer.isEmpty()) {
-                    System.out.println("🟡 Still waiting for data from Kafka...");
-                } else {
-                    System.out.println("📦 Buffer size: " + buffer.size());
+            // 建立監控排程器（單執行緒，daemon），每 5 秒輸出一次 buffer 狀態
+            monitorExecutor = Executors.newSingleThreadScheduledExecutor(r -> {
+                Thread t = new Thread(r, "ch-buffer-monitor");
+                t.setDaemon(true);
+                return t;
+            });
+
+            // 保存 future，關閉時可取消
+            ScheduledFuture<?> future = monitorExecutor.scheduleAtFixedRate(() -> {
+                try {
+                    if (buffer.isEmpty()) {
+                        log.info("🟡 Still waiting for data from Kafka...");
+                    } else {
+                        log.info("📦 Buffer size: {}", buffer.size());
+                    }
+                } catch (Throwable t) {
+                    // 監控不應中斷主流程，記錄即可
+                    log.warn("Buffer monitor error: {}", t.getMessage(), t);
                 }
             }, 0, 5, TimeUnit.SECONDS);
+            monitorFutureRef.set(future);
         }
 
         @Override
@@ -140,6 +165,7 @@ public class FlinkJob {
          * - 成功後輸出 log
          */
         private void flush() throws SQLException {
+            if (buffer.isEmpty()) return; // 沒資料就略過
             try {
                 for (KafkaToClickhouseEvent e : buffer) {
                     stmt.setLong(1, e.getUserId());
@@ -148,21 +174,61 @@ public class FlinkJob {
                     stmt.addBatch();
                 }
                 int[] result = stmt.executeBatch();
-                System.out.printf("✅ ClickHouse batch insert success: %d records at %s%n",
-                        result.length, Instant.now());
+                //（可選）若關閉 auto-commit，這裡要 conn.commit()
+                log.info("✅ ClickHouse batch insert success: {} records at {}", result.length, Instant.now());
             } catch (SQLException ex) {
-                ex.printStackTrace(); // 可以替換成正式 log
+                // 詳細記錄錯誤，方便定位哪筆數據導致異常
+                log.error("ClickHouse batch insert failed: {}", ex.getMessage(), ex);
+                //（可選）如果有使用手動 commit，可考慮 rollback
+                // try { conn.rollback(); } catch (SQLException ignored) {}
             } finally {
-                buffer.clear(); // 清空 buffer
+                buffer.clear(); // 總是清空 buffer，避免重複送
             }
         }
 
         @Override
         public void close() throws Exception {
-            // 結束前 flush 最後的 buffer
-            flush();
-            if (stmt != null) stmt.close();
-            if (conn != null) conn.close();
+            // 任務結束前，先 flush 最後的 buffer
+            try {
+                flush();
+            } catch (Exception e) {
+                log.warn("Flush on close error: {}", e.getMessage(), e);
+            }
+
+            // 1) 關閉監控排程器（先取消任務，再 shutdown，再 awaitTermination）
+            if (monitorExecutor != null && !monitorExecutor.isShutdown()) {
+                try {
+                    ScheduledFuture<?> f = monitorFutureRef.get();
+                    if (f != null && !f.isCancelled()) {
+                        f.cancel(false); // 不中斷正在執行的任務，但取消後續排程
+                    }
+                    monitorExecutor.shutdown();
+                    boolean terminated = monitorExecutor.awaitTermination(2, TimeUnit.SECONDS);
+                    if (!terminated) {
+                        log.warn("Monitor executor did not terminate in time, forcing shutdownNow()");
+                        monitorExecutor.shutdownNow();
+                    }
+                } catch (InterruptedException ie) {
+                    // 恢復中斷狀態，避免吞掉中斷
+                    Thread.currentThread().interrupt();
+                    log.warn("Interrupted while awaiting monitor executor termination", ie);
+                    monitorExecutor.shutdownNow();
+                } catch (Exception e) {
+                    log.warn("Error during monitor executor shutdown: {}", e.getMessage(), e);
+                }
+            }
+
+            // 2) 關閉 JDBC 資源（先 stmt 再 conn）
+            if (stmt != null) {
+                try { stmt.close(); } catch (SQLException e) {
+                    log.warn("Error closing PreparedStatement: {}", e.getMessage(), e);
+                }
+            }
+            if (conn != null) {
+                try { conn.close(); } catch (SQLException e) {
+                    log.warn("Error closing Connection: {}", e.getMessage(), e);
+                }
+            }
         }
     }
 }

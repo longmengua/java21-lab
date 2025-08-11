@@ -6,6 +6,7 @@ import com.example.demo.domain.model.shared.TwoBucketedCounters;
 import com.example.demo.domain.model.shared.BucketedCounter;
 import com.example.demo.domain.event.RiskAlertEvent;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.streams.processor.api.Processor;
 import org.apache.kafka.streams.processor.api.ProcessorContext;
 import org.apache.kafka.streams.processor.api.Record;
@@ -25,6 +26,7 @@ import java.util.concurrent.ConcurrentHashMap;
  *   1) FAST_CANCEL：在短時間內連續「下單 → 撤單」的次數超過門檻
  *   2) CANCEL_RATE：在時間窗口內撤單次數 / 下單次數 ≥ 閾值
  */
+@Slf4j
 public class RiskProcessor implements Processor<String, RiskEvent, String, String> {
 
     /** 風控配置服務（讀取 Redis 快取） */
@@ -73,6 +75,10 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
         final long now = ev.getTs() == null ? System.currentTimeMillis() : ev.getTs().toEpochMilli();
         // 取得交易對，若無則預設 "ALL"
         final String sym = ev.getSymbol() == null ? "ALL" : ev.getSymbol();
+
+        // ✅ 每次事件開始處理時打印 log
+        log.info("[RiskProcessor] Start processing event: key={}, type={}, symbol={}, ts={}",
+                acc, ev.getType(), sym, now);
 
         // 1) FAST_CANCEL 快撤單檢測
         switch (ev.getType().name()) {
@@ -167,6 +173,10 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
 
             // 生成 Kafka Streams 輸出紀錄
             var out = new Record<>(strategy + "|" + key, om.writeValueAsString(a), ts);
+
+            // ✅ 在寫入 ALERTS topic 前打印 log
+            log.info("[RiskProcessor] Emitting alert to ALERTS topic: key={}, strategy={}, details={}",
+                    out.key(), strategy, a);
 
             // 發送到下游（例如 ALERTS topic）
             ctx.forward(out);

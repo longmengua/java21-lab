@@ -5,6 +5,7 @@ import com.example.demo.infra.props.TopicsProps;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import jakarta.annotation.PostConstruct;
 import jakarta.annotation.PreDestroy;
+import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.producer.*;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
@@ -13,148 +14,222 @@ import org.springframework.stereotype.Component;
 import java.time.Instant;
 import java.util.Properties;
 import java.util.UUID;
+import java.util.concurrent.*;
+import java.util.concurrent.atomic.AtomicReference;
 import java.util.concurrent.ThreadLocalRandom;
 
 /**
  * <p>Kafka 模擬資料生產器</p>
  *
  * 啟動條件：
- *   1. application.yml 中 `mock.kafka.clickhouse=true`
- *   2. KafkaProps 中 `kafka.enabled=true`
- *   3. 已設定有效的 kafka.bootstrap-servers
- *   4. 已設定 topics.events
- *
- * 功能：
- *   - 啟動後自動在背景執行緒中，每秒固定送出 N 筆測試資料到指定 topic
- *   - 持續 M 秒，結束後自動 flush 並關閉 producer
+ *   1) application.yml: mock.kafka.clickhouse=true
+ *   2) application.yml: kafka.enabled=true
+ *   3) 已設定 kafka.bootstrap-servers
+ *   4) 已設定 topics.events
+ * 行為：
+ *   - 啟動後背景固定每秒送出 rps 筆資料到 events topic，總計 seconds 秒
+ *   - 結束後 flush 並關閉 Producer
  */
 @Component
-@ConditionalOnProperty(name = "mock.kafka.clickhouse", havingValue = "true") // 只有 true 才會建立這個 Bean
+@ConditionalOnProperty(name = "mock.kafka.clickhouse", havingValue = "true")
+@Slf4j
 public class MockProducerForClickhouse {
 
-    /** Kafka 相關設定（來自 application.yml 的 kafka.* 區塊） */
+    /** Kafka 連線與 Producer 測試參數（由 application.yml 綁定） */
     private final KafkaProps kafkaProps;
 
-    /** topics 設定（來自 application.yml 的 topics.* 區塊） */
+    /** Topics 設定（由 application.yml 綁定） */
     private final TopicsProps topics;
 
-    /** JSON 序列化工具（用於產生測試資料 JSON 字串） */
+    /** JSON 序列化工具（產測試 JSON 字串） */
     private static final ObjectMapper mapper = new ObjectMapper();
 
-    /** Kafka Producer 實例 */
+    /** Kafka Producer 實例（在 PostConstruct 建立，PreDestroy 關閉） */
     private Producer<String, String> producer;
 
-    /** 背景送資料的執行緒 */
-    private Thread worker;
+    /** 每秒排程器（長生命週期，與 Bean 同生同滅） */
+    private ScheduledExecutorService scheduler;
 
-    /** 建構子注入 Kafka 與 Topics 設定 */
+    /** 保存 scheduleAtFixedRate 回傳的 future，好在到時候取消自己 */
+    private final AtomicReference<ScheduledFuture<?>> scheduledRef = new AtomicReference<>();
+
+    /** 用於記錄啟動的背景「啟動器」執行緒（可選，主要為了與原邏輯對齊） */
+    private Thread launcher;
+
     public MockProducerForClickhouse(KafkaProps kafkaProps, TopicsProps topics) {
         this.kafkaProps = kafkaProps;
         this.topics = topics;
     }
 
     /**
-     * Bean 初始化後執行，啟動 Mock 資料生產流程
+     * Bean 初始化：檢查設定 → 建 Producer → 啟動固定頻率送資料
      */
     @PostConstruct
     public void startProducing() {
-        // 0) 檢查 Kafka 總開關
+        // ====== 0) 啟動前檢查條件 ======
         if (!kafkaProps.isEnabled()) {
-            System.out.println("⚠ Kafka 未啟用（kafka.enabled=false），跳過 Mock Producer");
+            log.warn("Kafka 未啟用（kafka.enabled=false），跳過 Mock Producer");
             return;
         }
 
-        // 0.1) 檢查 bootstrap servers 是否設定
         String bootstrap = kafkaProps.getBootstrapServers();
         if (bootstrap == null || bootstrap.isBlank()) {
-            System.out.println("❌ 缺少 kafka.bootstrap-servers，跳過 Mock Producer");
+            log.warn("缺少 kafka.bootstrap-servers，跳過 Mock Producer");
             return;
         }
 
-        // 0.2) 檢查 events topic 是否設定
         String topicName = topics.getEvents();
         if (topicName == null || topicName.isBlank()) {
-            throw new IllegalStateException("❌ 缺少 topics.events 配置，請在 application.yml 設定 topics.events");
+            throw new IllegalStateException("缺少 topics.events 配置，請在 application.yml 設定 topics.events");
         }
 
-        // 1) 讀取測試參數（records-per-second 與 duration-seconds）
-        int rps =  (kafkaProps.getProducer() != null) ? kafkaProps.getProducer().getRecordsPerSecond() : 0;
+        int rps = (kafkaProps.getProducer() != null) ? kafkaProps.getProducer().getRecordsPerSecond() : 0;
         int seconds = (kafkaProps.getProducer() != null) ? kafkaProps.getProducer().getDurationSeconds() : 0;
         if (rps <= 0 || seconds <= 0) {
-            System.out.printf("⚠ 測試參數不生效（recordsPerSecond=%d, durationSeconds=%d），跳過 Mock Producer%n", rps, seconds);
+            log.info("測試參數不生效（recordsPerSecond={}, durationSeconds={}），跳過 Mock Producer", rps, seconds);
             return;
         }
 
-        // 2) 建立 Kafka Producer 連線設定
+        // ====== 1) 建立 Kafka Producer ======
         Properties props = new Properties();
-        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap); // Kafka broker 位址
-        props.put(ProducerConfig.ACKS_CONFIG, "1"); // leader 確認即可
-        props.put(ProducerConfig.LINGER_MS_CONFIG, "5"); // 批次延遲 5ms
-        props.put(ProducerConfig.BATCH_SIZE_CONFIG, "32768"); // 批次大小
-        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4"); // 壓縮方式
-        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "false"); // 模擬資料不需要 EO
-        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5"); // 每連線同時請求數
-        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); // key 序列化
-        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName()); // value 序列化
-
-        // 建立 Producer 實例
+        props.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrap);
+        props.put(ProducerConfig.ACKS_CONFIG, "1"); // 僅 leader ack，降低延遲（模擬資料不需高可靠）
+        props.put(ProducerConfig.LINGER_MS_CONFIG, "5"); // 最多延遲 5ms 才發送（促進 batch）
+        props.put(ProducerConfig.BATCH_SIZE_CONFIG, "32768"); // 32KB 批次
+        props.put(ProducerConfig.COMPRESSION_TYPE_CONFIG, "lz4"); // 壓縮提吞吐
+        props.put(ProducerConfig.ENABLE_IDEMPOTENCE_CONFIG, "false"); // 模擬資料，不求 EO
+        props.put(ProducerConfig.MAX_IN_FLIGHT_REQUESTS_PER_CONNECTION, "5");
+        props.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
+        props.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, StringSerializer.class.getName());
         this.producer = new KafkaProducer<>(props);
 
-        // 3) 啟動背景執行緒送資料
-        worker = new Thread(() -> {
-            System.out.printf("🚀 Mock Kafka Producer ON. Sending %d records/sec to topic '%s' for %d sec...%n",
-                    rps, topicName, seconds);
+        // ====== 2) 啟動固定頻率送資料（每秒） ======
+        // 用單執行緒排程器；設為 daemon，隨 JVM 結束
+        this.scheduler = Executors.newSingleThreadScheduledExecutor(r -> {
+            Thread t = new Thread(r, "mock-kafka-producer");
+            t.setDaemon(true);
+            return t;
+        });
 
-            long endAt = System.currentTimeMillis() + seconds * 1000L;
+        final long endAt = System.currentTimeMillis() + seconds * 1000L;
+        log.info("🚀 Mock Kafka Producer ON. Sending {} records/sec to topic '{}' for {} sec...", rps, topicName, seconds);
 
-            while (System.currentTimeMillis() < endAt) {
-                long tickStart = System.currentTimeMillis();
+        // 啟動器：主要是為了與原本「啟動背景執行緒」的慣例一致，可省略
+        this.launcher = new Thread(() -> {
+            // 核心工作：每秒執行一次
+            ScheduledFuture<?> future = scheduler.scheduleAtFixedRate(() -> {
+                long now = System.currentTimeMillis();
 
-                // 每秒發送 rps 筆資料
+                // 到時間了：取消自己 → 關閉排程器 → flush → 完成
+                if (now >= endAt) {
+                    try {
+                        ScheduledFuture<?> self = scheduledRef.get();
+                        if (self != null && !self.isCancelled()) {
+                            self.cancel(false); // 取消後續觸發（不打斷正在跑的這次任務）
+                        }
+                        scheduler.shutdown(); // 停止接受新任務
+
+                        // 等待排程器優雅關閉
+                        boolean terminated = scheduler.awaitTermination(2, TimeUnit.SECONDS);
+                        if (!terminated) {
+                            log.warn("Mock Kafka Producer scheduler did not terminate within timeout");
+                        }
+                    } catch (InterruptedException ie) {
+                        // 恢復中斷狀態，避免吞掉中斷
+                        Thread.currentThread().interrupt();
+                        log.warn("Scheduler termination interrupted", ie);
+                    } catch (Exception e) {
+                        log.warn("Scheduler shutdown error: {}", e.getMessage(), e);
+                    }
+
+                    // 送完尾端資料
+                    try {
+                        producer.flush();
+                    } catch (Exception e) {
+                        log.warn("Producer flush error on finish: {}", e.getMessage(), e);
+                    }
+
+                    log.info("✅ Mock Kafka Producer finished.");
+                    return; // 結束這次執行
+                }
+
+                // 在本秒內送出 rps 筆
                 for (int i = 0; i < rps; i++) {
                     try {
-                        String key = String.valueOf(randomUserId()); // 以 userId 做 key，確保同 user 落同分區
-                        String json = generateJson(key); // 產生測試 JSON
+                        String key = String.valueOf(randomUserId()); // 同 userId → 同 partition（利於測試可預期性）
+                        String json = generateJson(key);
                         producer.send(new ProducerRecord<>(topicName, key, json), (md, ex) -> {
                             if (ex != null) {
-                                System.err.println("❌ Produce failed: " + ex.getMessage());
+                                log.error("Produce failed: {}", ex.getMessage(), ex);
                             }
                         });
                     } catch (Exception e) {
-                        System.err.println("❌ Build record failed: " + e.getMessage());
+                        log.error("Build record failed: {}", e.getMessage(), e);
                     }
                 }
+            }, 0, 1, TimeUnit.SECONDS);
 
-                // 節流至 1 秒（模擬固定速率）
-                long used = System.currentTimeMillis() - tickStart;
-                long sleep = 1000 - used;
-                if (sleep > 0) {
-                    try { Thread.sleep(sleep); } catch (InterruptedException ignored) {}
-                }
-            }
+            // 存起來，方便在「到時間」時自我取消
+            scheduledRef.set(future);
+        }, "mock-kafka-producer-launcher");
 
-            // 所有資料發送完畢後 flush
-            producer.flush();
-            System.out.println("✅ Mock Kafka Producer finished.");
-        }, "mock-kafka-producer");
-
-        // 設為 daemon 執行緒，隨應用結束自動關閉
-        worker.setDaemon(true);
-        worker.start();
+        this.launcher.setDaemon(true);
+        this.launcher.start();
     }
 
     /**
-     * Bean 銷毀前呼叫，負責釋放資源
+     * Bean 銷毀：確保 scheduler 與 producer 都被優雅關閉
      */
     @PreDestroy
     public void shutdown() {
+        // 1) 停排程器
+        if (scheduler != null && !scheduler.isShutdown()) {
+            try {
+                ScheduledFuture<?> f = scheduledRef.get();
+                if (f != null && !f.isCancelled()) {
+                    f.cancel(false);
+                }
+                scheduler.shutdown(); // 停止接新任務
+                boolean terminated = scheduler.awaitTermination(2, TimeUnit.SECONDS);
+                if (!terminated) {
+                    log.warn("Scheduler did not terminate in time, forcing shutdownNow()");
+                    scheduler.shutdownNow();
+                }
+            } catch (InterruptedException ie) {
+                Thread.currentThread().interrupt();
+                log.warn("Interrupted while awaiting scheduler termination", ie);
+                scheduler.shutdownNow();
+            } catch (Exception e) {
+                log.warn("Error during scheduler shutdown: {}", e.getMessage(), e);
+            }
+        }
+
+        // 2) 等待啟動器執行緒（若仍存活）
         try {
-            if (worker != null && worker.isAlive()) worker.join(2000); // 等待執行緒結束
-        } catch (InterruptedException ignored) {}
-        if (producer != null) producer.close(); // 關閉 Kafka 連線
+            if (launcher != null && launcher.isAlive()) {
+                launcher.join(2000);
+            }
+        } catch (InterruptedException ie) {
+            Thread.currentThread().interrupt();
+            log.warn("Interrupted while joining launcher thread", ie);
+        }
+
+        // 3) 關 Producer
+        if (producer != null) {
+            try {
+                producer.flush();
+            } catch (Exception e) {
+                log.warn("Producer flush error on shutdown: {}", e.getMessage(), e);
+            }
+            try {
+                producer.close();
+            } catch (Exception e) {
+                log.warn("Producer close error: {}", e.getMessage(), e);
+            }
+        }
     }
 
-    /** 產生隨機 userId */
+    /** 產生隨機 userId（0 ~ 9999） */
     private static long randomUserId() {
         return ThreadLocalRandom.current().nextLong(10_000L);
     }
