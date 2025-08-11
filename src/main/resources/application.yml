@@ -1,66 +1,86 @@
-server:
-  port: 8081
-
-# Mock 用
-mock:
-  kafka:
-    clickhouse: false
-    risk-control: true
-
-# MQ topic(不走 spring boot 配置)
-topics:
-  events: risk-events
-  alerts: risk-alerts
-
-# Redis 配置(不走 spring boot 默認配置)
-redis:
-  enabled: true
-  clusterMode: false
-  timeout: 2000 # 也可以寫 2s
-  max-attempts: 3
-  # password: your-password # 如果沒設密碼，這行可以移除
-  nodes:
-    - redis-single.redis.orb.local:6379
-
-# Clickhouse 配置
-clickhouse:
-  enabled: false
-  url: jdbc:clickhouse://clickhouse.clickhouse.orb.local:8123/default
-
-# RocketMQ 配置
-rocketmq:
-  enabled: false  # 暫時關閉
-  name-server: namesrv.rocketmq.orb.local:9876
-  producer:
-    group: test-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
-
-# Kafka MQ 配置
-kafka:
-  enabled: true
-  bootstrap-servers: localhost:9092
-  streams:
-    application-id: hf-risk-custom-buckets
-    properties:
-      processing.guarantee: exactly_once_v2
-  producer:
-    records-per-second: 10
-    duration-seconds: 5
-
-# Flink 配置
-flink:
-  enabled: false
-
-# MySQL 配置
-datasource:
-  enabled: false
-  mysql:
-    url: jdbc:mysql://mysql.sql.orb.local:3306/testdb
-    username: root
-    password:
-    driver-class-name: com.mysql.cj.jdbc.Driver
-
+# ====== Spring 基本資訊 ======
 spring:
   application:
-    name: demo
+    name: demo                        # 應用名稱（會出現在日誌/註冊中心等）
+
+# ====== 服務基礎設定 ======
+server:
+  port: 8081                          # 應用啟動的 HTTP 連接埠
+
+# ====== Mock 開關（本地/測試時用）======
+mock:
+  kafka:
+    clickhouse: false                 # 模擬 Kafka→ClickHouse 的資料流；true=啟用mock，不真的寫入CH
+    risk-control: true                # 模擬風控事件/告警資料流；true=啟用mock事件來源
+
+# ====== 題目定義（不走 Spring Boot 預設 Kafka 方式）======
+topics:
+  events: risk-events                 # 事件流 topic（如：撮合事件、下單/撤單事件）
+  alerts: risk-alerts                 # 告警輸出 topic（風控檢出後發佈）
+
+# ====== Redis 連線設定（不走 Spring Boot 預設）======
+redis:
+  enabled: true                       # 是否啟用 Redis 功能（配置中心/去重/快取等）
+  clusterMode: false                  # 是否為集群模式；true=使用 Redis Cluster
+  timeout: 2000                       # 逾時毫秒（可寫 2000 或 2s）
+  max-attempts: 3                     # 叢集重試次數（Cluster 模式時有效）
+  # password: your-password           # 若 Redis 設了密碼，取消註解並填入
+  nodes:
+    - redis-single.redis.orb.local:6379  # 節點列表；Cluster 模式填多個，單機可填一個
+
+# ====== ClickHouse 設定 ======
+clickhouse:
+  enabled: false                      # 是否啟用 ClickHouse 寫入（批量風控明細/指標落庫）
+  url: jdbc:clickhouse://clickhouse.clickhouse.orb.local:8123/default  # JDBC 連線字串
+
+# ====== RocketMQ 設定（目前關閉）======
+rocketmq:
+  enabled: false                      # 是否啟用 RocketMQ（若採 Kafka 可不開）
+  name-server: namesrv.rocketmq.orb.local:9876   # RocketMQ Namesrv 位址
+  producer:
+    group: test-producer-group        # Producer 群組名稱
+    send-message-timeout: 3000        # 同步發送逾時（毫秒）
+    retry-times-when-send-failed: 2   # 發送失敗重試次數
+
+# ====== Kafka 設定 ======
+kafka:
+  enabled: true                       # 是否啟用 Kafka（事件來源/告警輸出）
+  bootstrap-servers: localhost:9092   # Kafka broker 列表
+  streams:
+    application-id: hf-risk-custom-buckets     # Kafka Streams 應用 ID（狀態存儲/重平衡識別）
+    properties:
+      processing.guarantee: exactly_once_v2    # 處理語意：EOSv2（端到端去重/避免重複）
+  producer:
+    records-per-second: 10            # （用於本地Mock）每秒產多少筆測試訊息
+    duration-seconds: 5               # （用於本地Mock）持續產生的秒數
+
+# ====== Flink 設定（若走 Flink 任務，開啟此段）======
+flink:
+  enabled: false                      # 是否啟用 Flink 任務（流式/批式計算）
+
+# ====== MySQL 資料源設定（若有後台查詢/配置）======
+datasource:
+  enabled: false                      # 是否啟用資料庫（配置中心/審計/查詢）
+  mysql:
+    url: jdbc:mysql://mysql.sql.orb.local:3306/testdb   # JDBC 連線字串
+    username: root                    # DB 使用者
+    password:                         # DB 密碼（留空表示無）
+    driver-class-name: com.mysql.cj.jdbc.Driver  # MySQL 驅動
+
+# ====== SLF4J / Spring Boot Logging 設定 ======
+# 說明：
+# 1) 這裡是 Spring Boot 提供的 logging 快速配置（背後使用 Logback）。
+# 2) 會輸出到 console 以及一個檔案（logs/app.log）。
+# 3) 若需要檔案輪轉/分模組輸出多檔，建議改用 logback-spring.xml 做精細化設定。
+logging:
+  level:
+    root: INFO                        # 全域日誌等級
+    com.example.demo: DEBUG           # 專案主包：開 DEBUG 便於開發除錯
+    org.apache.kafka: WARN            # Kafka 客戶端降噪
+    org.apache.flink: WARN            # Flink 客戶端降噪
+    org.springframework: INFO         # Spring 框架一般資訊
+  file:
+    name: ${user.dir}/logs/app.log    # 檔案輸出路徑（單一檔）；不含輪轉策略
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"  # Console 格式
+    file:    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"  # File 格式
