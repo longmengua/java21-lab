@@ -61,7 +61,7 @@ public class MockProducerForRiskControl {
     @PostConstruct
     public void start() {
         executor = Executors.newSingleThreadScheduledExecutor();
-        executor.scheduleAtFixedRate(this::burstFastCancel, 1000, 1000, TimeUnit.MILLISECONDS);
+        executor.scheduleAtFixedRate(this::burstFastCancel, 1000, 2000, TimeUnit.MILLISECONDS);
         log.info("MockProducerForRiskControl 已啟動，固定產生模擬事件（間隔=1s）");
     }
 
@@ -83,7 +83,7 @@ public class MockProducerForRiskControl {
      */
     private void burstFastCancel() {
         try {
-            log.info("開始模擬高頻快撤單事件");
+            log.info("[開始模擬高頻快撤單事件]");
             String acc = "u123";                 // 測試帳號 ID
             String sym = "BTCUSDT";              // 測試交易對
             String ip = "10.0.0." + rnd.nextInt(50); // 隨機生成測試 IP
@@ -116,11 +116,13 @@ public class MockProducerForRiskControl {
         String json = om.writeValueAsString(ev);
 
         // 發送到 Kafka：key = accountId, value = JSON 序列化的事件
-        kafka.send(new ProducerRecord<>(EVENTS, acc, json));
+        kafka.send(new ProducerRecord<>(EVENTS, acc, json))
+                .whenComplete((meta, ex) -> {
+                    if (ex != null) log.error("send fail", ex);
+                    else log.debug("sent {}", meta);
+                });
 
         // 新增一筆 log，方便觀察每筆測試資料
-        log.info("Mock Kafka 事件發送 -> accountId={}, ip={}, symbol={}, type={}, ts={}",
-                acc, ip, sym, t, ev.getTs());
-        // 如果想同時輸出 JSON：log.debug("事件 JSON: {}", json);
+//        log.info("Mock Kafka 事件發送 JSON: {}", json);
     }
 }

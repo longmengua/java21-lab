@@ -45,13 +45,14 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
     private final Map<String, TwoBucketedCounters> cancelRateMap = new ConcurrentHashMap<>();
 
     /** JSON 轉換器，用於輸出告警事件 */
-    private final ObjectMapper om = new ObjectMapper();
+    private final ObjectMapper om;
 
     /** 最大統計秒數（用於滑動窗口計數器的容量） */
     private static final int MAX_SEC = 3600;
 
-    public RiskProcessor(RiskConfigService cfg) {
+    public RiskProcessor(RiskConfigService cfg, ObjectMapper om) {
         this.cfg = cfg;
+        this.om = om;
     }
 
     /** 初始化處理器，保存 Kafka Streams 的上下文 */
@@ -77,7 +78,7 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
         final String sym = ev.getSymbol() == null ? "ALL" : ev.getSymbol();
 
         // ✅ 每次事件開始處理時打印 log
-        log.info("[RiskProcessor] Start processing event: key={}, type={}, symbol={}, ts={}",
+        log.info("[風控處理器] Start processing event: key={}, type={}, symbol={}, ts={}",
                 acc, ev.getType(), sym, now);
 
         // 1) FAST_CANCEL 快撤單檢測
@@ -175,13 +176,14 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
             var out = new Record<>(strategy + "|" + key, om.writeValueAsString(a), ts);
 
             // ✅ 在寫入 ALERTS topic 前打印 log
-            log.info("[RiskProcessor] Emitting alert to ALERTS topic: key={}, strategy={}, details={}",
+            log.info("[風控處理器] Emitting alert to ALERTS topic: key={}, strategy={}, details={}",
                     out.key(), strategy, a);
 
             // 發送到下游（例如 ALERTS topic）
             ctx.forward(out);
-        } catch (Exception ignore) {
+        } catch (Exception e) {
             // 忽略序列化或發送錯誤
+            log.error("{}", e.getMessage());
         }
     }
 }

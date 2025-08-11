@@ -3,6 +3,7 @@ package com.example.demo.infra.config;
 import com.example.demo.application.service.RiskConfigService;
 import com.example.demo.domain.event.RiskEvent;
 import com.example.demo.interfaces.consumer.kafka.RiskProcessor;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.kafka.common.serialization.Serde;
 import org.apache.kafka.common.serialization.Serdes;
 import org.apache.kafka.common.serialization.Serializer;
@@ -50,7 +51,7 @@ public class TopologyConfig {
      * @return Kafka Streams Topology
      */
     @Bean(name = "riskKafkaTopology")
-    public Topology topology(RiskConfigService cfg) {
+    public Topology topology(RiskConfigService cfg, ObjectMapper om) {
         // ===== Step 0: 建立 JSON Serde（反序列化 + 序列化） =====
 
         // 建立 JSON 反序列化器（將 Kafka JSON 訊息轉成 RiskEvent 物件）
@@ -75,7 +76,7 @@ public class TopologyConfig {
         //  - 名稱："RISK"
         //  - 處理邏輯：RiskProcessor（自訂的 Processor API 實作，用來執行風控檢測邏輯）
         //  - 上游節點："SRC"（從 Source Node 接收資料）
-        t.addProcessor("RISK", () -> new RiskProcessor(cfg), "SRC");
+        t.addProcessor("RISK", () -> new RiskProcessor(cfg, om), "SRC");
 
         // ===== Step 4: 定義輸出節點（Sink Node） =====
         //  - 名稱："ALERTS"

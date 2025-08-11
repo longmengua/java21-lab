@@ -72,9 +72,9 @@ public class RiskConfigService {
         if (json == null || json.isBlank()) return;
         try {
             cache.set(om.readTree(json));
-            log.info("[RiskConfigService] 配置已載入/更新");
+            log.info("[風控配置服務] 配置已載入/更新");
         } catch (Exception e) {
-            log.error("[RiskConfigService] 配置 JSON 格式錯誤: {}", e.getMessage(), e);
+            log.error("[風控配置服務] 配置 JSON 格式錯誤: {}", e.getMessage(), e);
         }
     }
 
@@ -135,7 +135,7 @@ public class RiskConfigService {
                     @Override
                     public void onMessage(String channel, String message) {
                         if (CFG_CH.equals(channel)) {
-                            log.info("[RiskConfigService] 收到配置更新通知，重新載入...");
+                            log.info("[風控配置服務] 收到配置更新通知，重新載入...");
                             loadOnce();
                         }
                     }
@@ -143,13 +143,13 @@ public class RiskConfigService {
                 // 保存實例以便關閉時呼叫 unsubscribe()
                 subscriberRef = subscriber;
 
-                log.info("[RiskConfigService] 開始訂閱 Redis channel: {}", CFG_CH);
+                log.info("[風控配置服務] 開始訂閱 Redis channel: {}", CFG_CH);
                 // 阻塞直到 unsubscribe() 被呼叫或連線中斷
                 jedis.subscribe(subscriber, CFG_CH);
-                log.info("[RiskConfigService] 已結束訂閱（可能是 unsubscribe 或連線關閉）");
+                log.info("[風控配置服務] 已結束訂閱（可能是 unsubscribe 或連線關閉）");
             } catch (Exception e) {
                 // 這裡通常是連線中斷或關閉時拋出；記錄後讓執行緒結束
-                log.warn("[RiskConfigService] Pub/Sub 訂閱結束/失敗: {}", e.getMessage(), e);
+                log.warn("[風控配置服務] Pub/Sub 訂閱結束/失敗: {}", e.getMessage(), e);
             } finally {
                 subscriberRef = null; // 幫 GC 一把
             }

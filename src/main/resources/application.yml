@@ -83,10 +83,13 @@ datasource:
 logging:
   level:
     root: INFO
-    com.example.demo: DEBUG
-    org.apache.kafka: WARN
-    org.apache.flink: WARN
+    com.example.demo: INFO
+    org.apache.kafka: INFO
+    org.apache.flink: INFO
     org.springframework: INFO
+    org.springframework.kafka: DEBUG
+    org.apache.kafka.streams: INFO
+    org.apache.kafka.clients.consumer: INFO
   file:
     name: ${user.dir}/logs/app.log
   pattern:
