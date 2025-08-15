@@ -78,8 +78,8 @@ public class RiskProcessor implements Processor<String, RiskEvent, String, Strin
         final String sym = ev.getSymbol() == null ? "ALL" : ev.getSymbol();
 
         // ✅ 每次事件開始處理時打印 log
-        log.info("[風控處理器] Start processing event: key={}, type={}, symbol={}, ts={}",
-                acc, ev.getType(), sym, now);
+//        log.info("[風控處理器] Start processing event: key={}, type={}, symbol={}, ts={}",
+//                acc, ev.getType(), sym, now);
 
         // 1) FAST_CANCEL 快撤單檢測
         switch (ev.getType().name()) {

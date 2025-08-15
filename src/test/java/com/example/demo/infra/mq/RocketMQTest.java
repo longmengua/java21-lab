@@ -1,4 +1,4 @@
-package com.example.demo.infra;
+package com.example.demo.infra.mq;
 
 import org.apache.rocketmq.client.consumer.DefaultMQPushConsumer;
 import org.apache.rocketmq.client.consumer.listener.ConsumeConcurrentlyContext;
