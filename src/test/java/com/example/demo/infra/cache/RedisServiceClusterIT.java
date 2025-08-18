@@ -85,6 +85,11 @@ public class RedisServiceClusterIT {
     @Test
     @Order(1)
     void hot_path_kv_hash_counter_should_work() {
+        // 清場，避免上次殘留資料影響
+        svc.del("it:k");
+        svc.del("it:h");
+        svc.del("it:cnt");
+
         // String
         assertEquals("OK", svc.set("it:k", "v"));
         assertEquals("v", svc.get("it:k"));
@@ -92,7 +97,7 @@ public class RedisServiceClusterIT {
         assertTrue(svc.ttl("it:k") > 0);
 
         // Hash
-        assertTrue(svc.hset("it:h", "f", "x") >= 0);
+        assertEquals(1L, svc.hset("it:h", "f", "x")); // 第一次新增欄位，回傳 1
         assertEquals("x", svc.hget("it:h", "f"));
         assertEquals("x", svc.hgetAll("it:h").get("f"));
 
