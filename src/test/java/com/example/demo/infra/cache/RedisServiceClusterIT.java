@@ -243,7 +243,7 @@ public class RedisServiceClusterIT {
     @Order(5)
     void ztest() {
         Random rand = new Random();
-        String[] operations = new String[]{"開倉","平倉","撤單"};
+        String[] operations = new String[]{"平倉","開倉","撤單"};
         String[] metrics = new String[]{"統計維度Ａ","統計維度Ｂ","統計維度Ｃ"};
         int loopNum = 0;
 
@@ -261,16 +261,17 @@ public class RedisServiceClusterIT {
         svc.flushAllCluster();
 
         while (loopNum < 50) {
-            int randomID = rand.nextInt(3) + 1;
-            int randomOps = rand.nextInt(3);
-            int randomMetric = rand.nextInt(3);
+            int randomID = rand.nextInt(3) + 1; // 用戶 ID
+            int randomOps = rand.nextInt(2); // 行爲
+            int randomMetric = rand.nextInt(3); // 統計維度
             String userID = String.format("UserID_%d", randomID);
-            long timestamp = Instant.now().toEpochMilli();
+            Instant now = Instant.now();
+            long timestamp = now.toEpochMilli();
             String operation = operations[randomOps];
             String metric = metrics[randomMetric];
 
             String key = String.format("%s:%s", metric, userID);
-            String member = String.format("%s:%s", operation, randomSuffix());
+            String member = String.format("%s:%s:%s", operation, now.toString(), randomSuffix());
 
             // 寫入 Redis（保留原行為）
             svc.zset(key, member, (double) timestamp);
