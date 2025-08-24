@@ -54,7 +54,7 @@ public class RedisServiceClusterIT {
     /** 產生短隨機尾碼，避免同毫秒 ZADD 覆蓋 */
     private static String randomSuffix() {
         long r = Math.abs(ThreadLocalRandom.current().nextLong());
-        return Long.toString(r, 8);
+        return Long.toString(r, 32).substring(0, 8);
     }
 
     /**
