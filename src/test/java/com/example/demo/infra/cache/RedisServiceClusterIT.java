@@ -3,14 +3,10 @@ package com.example.demo.infra.cache;
 import com.example.demo.infra.props.RedisProps;
 import org.junit.jupiter.api.*;
 import redis.clients.jedis.*;
-import redis.clients.jedis.exceptions.JedisDataException;
-import redis.clients.jedis.params.ScanParams;
-import redis.clients.jedis.resps.ScanResult;
-import redis.clients.jedis.resps.Tuple;
 
-import java.nio.charset.StandardCharsets;
 import java.time.Instant;
 import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.IntStream;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -54,6 +50,13 @@ public class RedisServiceClusterIT {
 
 
     // ============================ 輔助方法 ============================
+
+    /** 產生短隨機尾碼，避免同毫秒 ZADD 覆蓋 */
+    private static String randomSuffix() {
+        long r = Math.abs(ThreadLocalRandom.current().nextLong());
+        return Long.toString(r, 8);
+    }
+
     /**
      * 等待叢集就緒：輪詢 cluster info，直到 "cluster_state:ok"
      */
@@ -267,7 +270,7 @@ public class RedisServiceClusterIT {
             String metric = metrics[randomMetric];
 
             String key = String.format("%s:%s", metric, userID);
-            String member = operation;
+            String member = String.format("%s:%s", operation, randomSuffix());
 
             // 寫入 Redis（保留原行為）
             svc.zset(key, member, (double) timestamp);
