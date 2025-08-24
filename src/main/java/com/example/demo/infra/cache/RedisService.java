@@ -7,6 +7,7 @@ import redis.clients.jedis.*;
 import redis.clients.jedis.commands.JedisCommands;
 import redis.clients.jedis.params.ScanParams;
 import redis.clients.jedis.resps.ScanResult;
+import redis.clients.jedis.resps.Tuple;
 
 import java.util.*;
 import java.util.stream.Collectors;
@@ -97,6 +98,28 @@ public class RedisService {
 
     /** Hash 讀取全部欄位值 */
     public Map<String, String> hgetAll(String key) { return client.hgetAll(key); }
+
+    // ===========================
+    // ZSet 操作
+    // ===========================
+
+    /** 『key』有序集合的名稱 (zset 的 key)。例子：leaderboard。 『score』成員的分數 (浮點數)。Redis 會依照這個分數做排序。例子：100。 『member』成員值 (唯一字串)。例子："Alice" **/
+    public Long zset(String key, String member, Double score) {
+        return client.zadd(key, score, member);
+    }
+
+    /** 『key』有序集合的名稱 (zset 的 key)。例子：leaderboard。  『map』為多個參數 **/
+    public Long zsetMap(String key, Map<String, Double> map) {
+        return client.zadd(key, map);
+    }
+
+    public Long zcount(String key,Double min, Double max) {
+        return client.zcount(key, min, max);
+    }
+
+    public List<Tuple> zall(String key) {
+        return client.zrangeWithScores(key, 0, -1);
+    }
 
     // ===========================
     // Pub/Sub
