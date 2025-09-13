@@ -28,6 +28,12 @@ dependencies {
     implementation("org.springframework.boot:spring-boot-starter-actuator")
     implementation("com.mysql:mysql-connector-j")
 
+    // ===== MyBatis-Plus（建議只用這個） =====
+    implementation("com.baomidou:mybatis-plus-boot-starter:3.5.14")
+
+    // 分頁用：自 3.5.9+ 需額外加 jsqlparser
+    implementation("com.baomidou:mybatis-plus-jsqlparser:3.5.14")
+
     // ===== Kafka =====
     implementation("org.springframework.kafka:spring-kafka")          // Spring Kafka (Producer/Consumer + Streams 支援)
     implementation("org.apache.kafka:kafka-streams")                   // Kafka Streams 核心 API（版本與 spring-kafka 對應）

@@ -1,9 +1,9 @@
 package com.example.demo.application.service;
 
 import com.example.demo.application.usecase.AuthUsecase;
-import com.example.demo.domain.model.user.User;
+import com.example.demo.domain.model.user.Users;
 import com.example.demo.infra.repository.InMemoryUserRepository;
-import com.example.demo.domain.repository.UserRepository;
+import com.example.demo.domain.repository.cache.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -27,7 +27,7 @@ class AuthServiceIntegrationTest {
 
         @Bean
         public AuthUsecase authService(UserRepository userRepository) {
-            return new AuthUsecase(userRepository);
+            return new AuthUsecase(userRepository, null);
         }
     }
 
@@ -58,7 +58,14 @@ class AuthServiceIntegrationTest {
 
     @Test
     void testRegister_shouldFail_whenUserExists() {
-        userRepository.save(new User("waltor", "pw", "0912"));
+        // 🔧 用 builder 建立使用者
+        userRepository.save(
+                Users.builder()
+                        .username("waltor")
+                        .password("pw")
+                        .phone("0912")
+                        .build()
+        );
 
         RuntimeException e = assertThrows(RuntimeException.class, () ->
                 authUsecase.register("waltor", "pw", "0912")
@@ -69,7 +76,14 @@ class AuthServiceIntegrationTest {
 
     @Test
     void testLogin_shouldFail_withWrongPassword() {
-        userRepository.save(new User("waltor", "correct", "0912"));
+        // 🔧 用 builder 建立使用者
+        userRepository.save(
+                Users.builder()
+                        .username("waltor")
+                        .password("correct")
+                        .phone("0912")
+                        .build()
+        );
 
         RuntimeException e = assertThrows(RuntimeException.class, () ->
                 authUsecase.login("waltor", "wrong")

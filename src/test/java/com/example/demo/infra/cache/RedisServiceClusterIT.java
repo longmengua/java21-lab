@@ -271,7 +271,7 @@ public class RedisServiceClusterIT {
             String metric = metrics[randomMetric];
 
             String key = String.format("%s:%s", metric, userID);
-            String member = String.format("%s:%s:%s", operation, now.toString(), randomSuffix());
+            String member = String.format("%s:%s:%s", operation, now, randomSuffix());
 
             // 寫入 Redis（保留原行為）
             svc.zset(key, member, (double) timestamp);

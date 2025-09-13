@@ -1,76 +1,87 @@
-# ====== Spring 基本資訊 ======
+# ===================== Server 基本資訊 =====================
+server:
+  port: 8081   # 啟動服務的埠號（預設 8080）
+
+# ===================== Spring 基本資訊 =====================
 spring:
   application:
-    name: demo
+    name: demo   # Spring Boot 應用名稱
   kafka:
-    # 直接覆蓋 Spring 的預設 bootstrap servers（由你自訂 kafka.* 值橋接）
-    bootstrap-servers: ${kafka.bootstrap-servers}
-    # Producer 預設（可依需要調整）
-    producer:
-      key-serializer: org.apache.kafka.common.serialization.StringSerializer
-      value-serializer: org.apache.kafka.common.serialization.StringSerializer
-      acks: all
-      retries: 3
-    # Streams（若你使用 Spring Kafka Streams 自動化）
-    streams:
-      application-id: ${kafka.streams.application-id}
+    bootstrap-servers: ${kafka.bootstrap-servers}   # Kafka 伺服器地址
+    producer:   # Kafka Producer 預設參數
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer   # Key 序列化
+      value-serializer: org.apache.kafka.common.serialization.StringSerializer # Value 序列化
+      acks: all        # 確認模式：all = 所有副本都確認才算成功
+      retries: 3       # 發送失敗時重試次數
+    streams:   # Kafka Streams 配置
+      application-id: ${kafka.streams.application-id}   # 流應用 ID（必須唯一）
       properties:
-        processing.guarantee: ${kafka.streams.properties.processing.guarantee:exactly_once_v2}
+        processing.guarantee: ${kafka.streams.properties.processing.guarantee:exactly_once_v2} # 處理語意，預設精確一次
 
-server:
-  port: 8081
+  datasource:   # Spring DataSource（JDBC連線）
+    url: jdbc:mysql://localhost:3306/your_db?useSSL=false&serverTimezone=Asia/Taipei
+    username: root
+    password: your_password
+    driver-class-name: com.mysql.cj.jdbc.Driver
 
-# ====== Mock 開關 ======
+# ===================== MyBatis 配置（可選） =====================
+# mybatis-plus:
+#   mapper-locations: classpath*:mapper/**/*.xml   # Mapper XML 路徑
+#   type-aliases-package: com.example.domain       # 實體別名包路徑
+#   configuration:
+#     map-underscore-to-camel-case: true           # 下劃線自動轉駝峰
+
+# ===================== Mock 開關（模擬用） =====================
 mock:
   kafka:
-    clickhouse: false
-    risk-control: true
+    clickhouse: false      # 是否模擬 ClickHouse Kafka producer
+    risk-control: true     # 是否模擬 Risk Control Kafka producer
 
-# ====== 題目定義（自訂）======
+# ===================== Kafka Topics 定義 =====================
 topics:
-  events: risk-events
-  alerts: risk-alerts
+  events: risk-events    # 風控事件 topic
+  alerts: risk-alerts    # 告警 topic
 
-# ====== 自訂 Kafka（作為單一資料源，並橋接到 spring.kafka.*）======
+# ===================== Kafka 自訂配置 =====================
 kafka:
   enabled: true
-  bootstrap-servers: single-kafka.kafka.orb.local:9092
+  bootstrap-servers: single-kafka.kafka.orb.local:9092   # Kafka broker 位置
   streams:
-    application-id: hf-risk-custom-buckets
+    application-id: hf-risk-custom-buckets   # Kafka Streams 應用 ID
     properties:
-      processing.guarantee: exactly_once_v2
+      processing.guarantee: exactly_once_v2  # 精確一次處理
   producer:
-    records-per-second: 10
-    duration-seconds: 5
+    records-per-second: 10   # 測試用：模擬每秒產生訊息數
+    duration-seconds: 5      # 測試用：模擬持續時間（秒）
 
-# ====== Redis（仍採自訂）======
+# ===================== Redis 配置 =====================
 redis:
   enabled: true
-  clusterMode: false
-  timeout: 2000
-  max-attempts: 3
+  clusterMode: false         # 是否啟用 cluster 模式
+  timeout: 2000              # 連線逾時（毫秒）
+  max-attempts: 3            # 最大重試次數
   nodes:
-    - redis-single.redis.orb.local:6379
+    - redis-single.redis.orb.local:6379   # Redis 節點清單
 
-# ====== ClickHouse（自訂）======
+# ===================== ClickHouse 配置 =====================
 clickhouse:
   enabled: false
   url: jdbc:clickhouse://clickhouse.clickhouse.orb.local:8123/default
 
-# ====== RocketMQ（關閉）======
+# ===================== RocketMQ 配置 =====================
 rocketmq:
   enabled: false
-  name-server: namesrv.rocketmq.orb.local:9876
+  name-server: namesrv.rocketmq.orb.local:9876   # Nameserver 位置
   producer:
-    group: test-producer-group
-    send-message-timeout: 3000
-    retry-times-when-send-failed: 2
+    group: test-producer-group        # Producer 群組
+    send-message-timeout: 3000        # 發送逾時（毫秒）
+    retry-times-when-send-failed: 2   # 發送失敗重試次數
 
-# ====== Flink（自訂）======
+# ===================== Flink 配置 =====================
 flink:
   enabled: false
 
-# ====== MySQL（自訂）======
+# ===================== MySQL 自訂配置 =====================
 datasource:
   enabled: false
   mysql:
@@ -79,19 +90,19 @@ datasource:
     password:
     driver-class-name: com.mysql.cj.jdbc.Driver
 
-# ====== Logging ======
+# ===================== Logging 配置 =====================
 logging:
-  level:
+  level:   # 日誌層級設定
     root: INFO
     com.example.demo: INFO
     org.apache.kafka: INFO
     org.apache.flink: INFO
     org.springframework: INFO
-    org.springframework.kafka: DEBUG
+    org.springframework.kafka: DEBUG   # 開啟 Spring Kafka debug，方便排查
     org.apache.kafka.streams: INFO
     org.apache.kafka.clients.consumer: INFO
   file:
-    name: ${user.dir}/logs/app.log
+    name: ${user.dir}/logs/app.log   # 輸出檔案位置
   pattern:
-    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
-    file:    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n"
+    console: "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # Console 格式
+    file:    "%d{yyyy-MM-dd HH:mm:ss.SSS} [%thread] %-5level %logger{36} - %msg%n" # File 格式

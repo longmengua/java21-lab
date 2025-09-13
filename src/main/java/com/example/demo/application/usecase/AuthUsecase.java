@@ -1,23 +1,30 @@
 package com.example.demo.application.usecase;
 
-import com.example.demo.domain.model.user.User;
-import com.example.demo.domain.repository.UserRepository;
+import com.example.demo.domain.model.user.Users;
+import com.example.demo.domain.repository.cache.UserRepository;
+import com.example.demo.domain.repository.mapper.UserMapper;
+import lombok.RequiredArgsConstructor;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 @Service
+@RequiredArgsConstructor
 public class AuthUsecase {
+
+    @Value("${datasource.enabled:false}") // 如果沒設，預設 false
+    private boolean datasourceEnabled;
 
     private final UserRepository userRepository;
 
-    public AuthUsecase(UserRepository userRepository) {
-        this.userRepository = userRepository;
-    }
+    private final UserMapper userMapper;
 
     public void register(String username, String password, String phone) {
         if (userRepository.findByUsername(username).isPresent()) {
             throw new RuntimeException("使用者已存在");
         }
-        userRepository.save(new User(username, password, phone));
+        userRepository.save(
+                Users.builder().username(username).phone(phone).password(password).build()
+        );
     }
 
     public void login(String username, String password) {
